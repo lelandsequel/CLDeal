@@ -9,6 +9,7 @@ import { trpc } from "@/lib/trpc";
 import { Building2, DollarSign, Heart, Search, Sparkles, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
+import { Download, FileText } from "lucide-react";
 
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
@@ -45,6 +46,43 @@ export default function Home() {
 
   const handleSearch = () => {
     refetch();
+  };
+
+  const exportHTMLMutation = trpc.export.html.useMutation();
+  const exportPDFMutation = trpc.export.pdf.useMutation();
+
+  const handleExportHTML = async () => {
+    try {
+      const result = await exportHTMLMutation.mutateAsync({});
+      const blob = new Blob([result.html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `deal-finder-properties-${new Date().toISOString().split('T')[0]}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export HTML failed:', error);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const result = await exportPDFMutation.mutateAsync({});
+      // For PDF, we'll use the browser's print-to-PDF functionality
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(result.html);
+        printWindow.document.close();
+        setTimeout(() => {
+          printWindow.print();
+        }, 250);
+      }
+    } catch (error) {
+      console.error('Export PDF failed:', error);
+    }
   };
 
   const displayProperties = properties || recentProperties || [];
@@ -112,11 +150,35 @@ export default function Home() {
       <section className="container mx-auto -mt-8 mb-8">
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5" />
-              Search Properties
-            </CardTitle>
-            <CardDescription>Filter properties by your investment criteria</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Search className="h-5 w-5" />
+                Search Properties
+              </CardTitle>
+              <CardDescription>Filter properties by your investment criteria</CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportHTML}
+                disabled={!properties || properties.length === 0}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Export HTML
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportPDF}
+                disabled={!properties || properties.length === 0}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export PDF
+              </Button>
+            </div>
+          </div>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

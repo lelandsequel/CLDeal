@@ -6,6 +6,7 @@ import { z } from "zod";
 import * as db from "./db";
 import { invokeLLM } from "./_core/llm";
 import { runAgenticSearch, runMultiLocationSearch } from "./agenticSearch";
+import { generateHTMLReport, generatePDFHTML } from "./exportUtils";
 
 export const appRouter = router({
   system: systemRouter,
@@ -288,6 +289,54 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { locations, ...criteria } = input;
         return await runMultiLocationSearch(locations, criteria);
+      }),
+  }),
+
+  export: router({
+    html: protectedProcedure
+      .input(
+        z.object({
+          propertyIds: z.array(z.number()).optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        let properties;
+        if (input.propertyIds && input.propertyIds.length > 0) {
+          // Export specific properties
+          properties = await Promise.all(
+            input.propertyIds.map(id => db.getPropertyById(id))
+          );
+          properties = properties.filter(p => p !== undefined) as any[];
+        } else {
+          // Export all properties
+          properties = await db.searchProperties({});
+        }
+        
+        const html = generateHTMLReport(properties);
+        return { html };
+      }),
+
+    pdf: protectedProcedure
+      .input(
+        z.object({
+          propertyIds: z.array(z.number()).optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        let properties;
+        if (input.propertyIds && input.propertyIds.length > 0) {
+          // Export specific properties
+          properties = await Promise.all(
+            input.propertyIds.map(id => db.getPropertyById(id))
+          );
+          properties = properties.filter(p => p !== undefined) as any[];
+        } else {
+          // Export all properties
+          properties = await db.searchProperties({});
+        }
+        
+        const html = generatePDFHTML(properties);
+        return { html };
       }),
   }),
 });
