@@ -107,6 +107,7 @@ export async function searchProperties(criteria: {
   maxPrice?: number;
   minARV?: number;
   maxARV?: number;
+  maxPriceToARVRatio?: number;
   minProfit?: number;
   city?: string;
   state?: string;
@@ -148,11 +149,22 @@ export async function searchProperties(criteria: {
     conditions.push(gte(properties.daysOnMarket, criteria.minDaysOnMarket));
   }
 
-  const query = conditions.length > 0
+  let query = conditions.length > 0
     ? db.select().from(properties).where(and(...conditions)).orderBy(desc(properties.profitScore))
     : db.select().from(properties).orderBy(desc(properties.profitScore));
 
-  return await query;
+  let results = await query;
+
+  // Filter by price-to-ARV ratio (can't do this in SQL easily)
+  if (criteria.maxPriceToARVRatio) {
+    results = results.filter((property) => {
+      if (!property.estimatedARV || property.estimatedARV === 0) return false;
+      const ratio = (property.currentPrice / property.estimatedARV) * 100;
+      return ratio <= criteria.maxPriceToARVRatio!;
+    });
+  }
+
+  return results;
 }
 
 export async function getPropertyById(id: number) {

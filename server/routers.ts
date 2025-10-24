@@ -30,6 +30,7 @@ export const appRouter = router({
           maxPrice: z.number().optional(),
           minARV: z.number().optional(),
           maxARV: z.number().optional(),
+          maxPriceToARVRatio: z.number().optional(), // e.g., 60 means max 60% of ARV
           minProfit: z.number().optional(),
           city: z.string().optional(),
           state: z.string().optional(),

@@ -18,6 +18,7 @@ export default function Home() {
     maxPrice: "",
     minARV: "",
     maxARV: "",
+    maxPriceToARVRatio: "",
     minProfit: "",
     city: "",
     state: "",
@@ -31,6 +32,7 @@ export default function Home() {
       maxPrice: searchParams.maxPrice ? parseInt(searchParams.maxPrice) : undefined,
       minARV: searchParams.minARV ? parseInt(searchParams.minARV) : undefined,
       maxARV: searchParams.maxARV ? parseInt(searchParams.maxARV) : undefined,
+      maxPriceToARVRatio: searchParams.maxPriceToARVRatio ? parseInt(searchParams.maxPriceToARVRatio) : undefined,
       minProfit: searchParams.minProfit ? parseInt(searchParams.minProfit) : undefined,
       city: searchParams.city || undefined,
       state: searchParams.state || undefined,
@@ -177,6 +179,18 @@ export default function Home() {
                   value={searchParams.maxARV}
                   onChange={(e) => setSearchParams({ ...searchParams, maxARV: e.target.value })}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="maxPriceToARVRatio">Max Price % of ARV</Label>
+                <Input
+                  id="maxPriceToARVRatio"
+                  type="number"
+                  placeholder="60"
+                  value={searchParams.maxPriceToARVRatio}
+                  onChange={(e) => setSearchParams({ ...searchParams, maxPriceToARVRatio: e.target.value })}
+                />
+                <p className="text-xs text-slate-500">e.g., 60 = max 60% of ARV</p>
               </div>
 
               <div className="space-y-2">
