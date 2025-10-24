@@ -101,10 +101,12 @@ export async function getUserByOpenId(openId: string) {
 }
 
 // Property queries
-export async function searchProperties(filters: {
-  propertyType?: string;
+export async function searchProperties(criteria: {
+  propertyType?: "single-family" | "multifamily";
   minPrice?: number;
   maxPrice?: number;
+  minARV?: number;
+  maxARV?: number;
   minProfit?: number;
   city?: string;
   state?: string;
@@ -115,26 +117,35 @@ export async function searchProperties(filters: {
 
   const conditions = [];
   
-  if (filters.propertyType && filters.propertyType !== "both") {
-    conditions.push(eq(properties.propertyType, filters.propertyType as any));
+  if (criteria.propertyType) {
+    conditions.push(eq(properties.propertyType, criteria.propertyType as any));
   }
-  if (filters.minPrice) {
-    conditions.push(gte(properties.currentPrice, filters.minPrice));
+  if (criteria.minPrice) {
+    conditions.push(gte(properties.currentPrice, criteria.minPrice));
   }
-  if (filters.maxPrice) {
-    conditions.push(lte(properties.currentPrice, filters.maxPrice));
+  if (criteria.maxPrice) {
+    conditions.push(lte(properties.currentPrice, criteria.maxPrice));
   }
-  if (filters.minProfit) {
-    conditions.push(gte(properties.estimatedProfitPotential, filters.minProfit));
+
+  if (criteria.minARV) {
+    conditions.push(gte(properties.estimatedARV, criteria.minARV));
   }
-  if (filters.city) {
-    conditions.push(eq(properties.city, filters.city));
+
+  if (criteria.maxARV) {
+    conditions.push(lte(properties.estimatedARV, criteria.maxARV));
   }
-  if (filters.state) {
-    conditions.push(eq(properties.state, filters.state));
+  
+  if (criteria.minProfit) {
+    conditions.push(gte(properties.estimatedProfitPotential, criteria.minProfit));
   }
-  if (filters.minDaysOnMarket) {
-    conditions.push(gte(properties.daysOnMarket, filters.minDaysOnMarket));
+  if (criteria.city) {
+    conditions.push(eq(properties.city, criteria.city));
+  }
+  if (criteria.state) {
+    conditions.push(eq(properties.state, criteria.state));
+  }
+  if (criteria.minDaysOnMarket) {
+    conditions.push(gte(properties.daysOnMarket, criteria.minDaysOnMarket));
   }
 
   const query = conditions.length > 0

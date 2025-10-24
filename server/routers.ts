@@ -25,9 +25,11 @@ export const appRouter = router({
     search: publicProcedure
       .input(
         z.object({
-          propertyType: z.string().optional(),
+          propertyType: z.enum(["single-family", "multifamily"]).optional(),
           minPrice: z.number().optional(),
           maxPrice: z.number().optional(),
+          minARV: z.number().optional(),
+          maxARV: z.number().optional(),
           minProfit: z.number().optional(),
           city: z.string().optional(),
           state: z.string().optional(),

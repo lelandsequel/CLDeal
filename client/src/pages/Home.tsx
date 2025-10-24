@@ -13,9 +13,11 @@ import { Link } from "wouter";
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
   const [searchParams, setSearchParams] = useState({
-    propertyType: "all",
+    propertyType: "all" as "all" | "single-family" | "multifamily",
     minPrice: "",
     maxPrice: "",
+    minARV: "",
+    maxARV: "",
     minProfit: "",
     city: "",
     state: "",
@@ -24,15 +26,17 @@ export default function Home() {
 
   const { data: properties, isLoading, refetch } = trpc.properties.search.useQuery(
     {
-      propertyType: searchParams.propertyType === "all" ? undefined : searchParams.propertyType,
+      propertyType: searchParams.propertyType === "all" ? undefined : (searchParams.propertyType as "single-family" | "multifamily"),
       minPrice: searchParams.minPrice ? parseInt(searchParams.minPrice) : undefined,
       maxPrice: searchParams.maxPrice ? parseInt(searchParams.maxPrice) : undefined,
+      minARV: searchParams.minARV ? parseInt(searchParams.minARV) : undefined,
+      maxARV: searchParams.maxARV ? parseInt(searchParams.maxARV) : undefined,
       minProfit: searchParams.minProfit ? parseInt(searchParams.minProfit) : undefined,
       city: searchParams.city || undefined,
       state: searchParams.state || undefined,
       minDaysOnMarket: searchParams.minDaysOnMarket ? parseInt(searchParams.minDaysOnMarket) : undefined,
     },
-    { enabled: false }
+    { enabled: true }
   );
 
   const { data: recentProperties } = trpc.properties.getRecent.useQuery({ limit: 20 });
@@ -118,7 +122,7 @@ export default function Home() {
                 <Label htmlFor="propertyType">Property Type</Label>
                 <Select
                   value={searchParams.propertyType}
-                  onValueChange={(value) => setSearchParams({ ...searchParams, propertyType: value })}
+                  onValueChange={(value) => setSearchParams({ ...searchParams, propertyType: value as "all" | "single-family" | "multifamily" })}
                 >
                   <SelectTrigger id="propertyType">
                     <SelectValue placeholder="All Types" />
@@ -150,6 +154,28 @@ export default function Home() {
                   placeholder="$1,000,000"
                   value={searchParams.maxPrice}
                   onChange={(e) => setSearchParams({ ...searchParams, maxPrice: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="minARV">Min ARV</Label>
+                <Input
+                  id="minARV"
+                  type="number"
+                  placeholder="$0"
+                  value={searchParams.minARV}
+                  onChange={(e) => setSearchParams({ ...searchParams, minARV: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="maxARV">Max ARV</Label>
+                <Input
+                  id="maxARV"
+                  type="number"
+                  placeholder="$2,000,000"
+                  value={searchParams.maxARV}
+                  onChange={(e) => setSearchParams({ ...searchParams, maxARV: e.target.value })}
                 />
               </div>
 
