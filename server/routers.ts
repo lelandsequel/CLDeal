@@ -270,6 +270,7 @@ export const appRouter = router({
           propertyType: z.enum(["single-family", "multifamily", "both"]).optional(),
           maxPrice: z.number().optional(),
           minProfit: z.number().optional(),
+          maxPriceToARVRatio: z.number().optional(),
         })
       )
       .mutation(async ({ input }) => {
@@ -284,6 +285,7 @@ export const appRouter = router({
           propertyType: z.enum(["single-family", "multifamily", "both"]).optional(),
           maxPrice: z.number().optional(),
           minProfit: z.number().optional(),
+          maxPriceToARVRatio: z.number().optional(),
         })
       )
       .mutation(async ({ input }) => {

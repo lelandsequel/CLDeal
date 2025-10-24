@@ -20,6 +20,7 @@ export default function AgenticSearch() {
   const [multiLocations, setMultiLocations] = useState("");
   const [propertyType, setPropertyType] = useState<"single-family" | "multifamily" | "both">("both");
   const [maxPrice, setMaxPrice] = useState("");
+  const [maxPriceToARVRatio, setMaxPriceToARVRatio] = useState("");
   const [searchResults, setSearchResults] = useState<any>(null);
 
   const runSearchMutation = trpc.agenticSearch.runSearch.useMutation({
@@ -79,6 +80,7 @@ export default function AgenticSearch() {
         location: singleLocation,
         propertyType,
         maxPrice: maxPrice ? parseInt(maxPrice) : undefined,
+        maxPriceToARVRatio: maxPriceToARVRatio ? parseInt(maxPriceToARVRatio) : undefined,
       });
     } else {
       const locations = multiLocations
@@ -95,6 +97,7 @@ export default function AgenticSearch() {
         locations,
         propertyType,
         maxPrice: maxPrice ? parseInt(maxPrice) : undefined,
+        maxPriceToARVRatio: maxPriceToARVRatio ? parseInt(maxPriceToARVRatio) : undefined,
       });
     }
   };
@@ -211,6 +214,21 @@ export default function AgenticSearch() {
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
                 />
+              </div>
+
+              {/* Max Price to ARV Ratio */}
+              <div className="space-y-2">
+                <Label htmlFor="maxPriceToARVRatio">Max Price % of ARV (Optional)</Label>
+                <Input
+                  id="maxPriceToARVRatio"
+                  type="number"
+                  placeholder="e.g., 60"
+                  value={maxPriceToARVRatio}
+                  onChange={(e) => setMaxPriceToARVRatio(e.target.value)}
+                />
+                <p className="text-sm text-slate-500">
+                  e.g., 60 = only find properties where price is max 60% of ARV (70% rule)
+                </p>
               </div>
 
               {/* Search Button */}

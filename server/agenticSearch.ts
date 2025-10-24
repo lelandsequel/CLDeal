@@ -14,6 +14,8 @@ interface SearchCriteria {
   propertyType?: "single-family" | "multifamily" | "both";
   maxPrice?: number;
   minProfit?: number;
+  minDaysOnMarket?: number;
+  maxPriceToARVRatio?: number;
 }
 
 interface PropertyListing {
@@ -94,7 +96,7 @@ function generateSearchQueries(criteria: SearchCriteria): string[] {
 /**
  * Use LLM to extract property information from search results
  */
-async function extractPropertyInfo(searchQuery: string, location: string): Promise<PropertyListing[]> {
+async function extractPropertyInfo(searchQuery: string, location: string, criteria?: SearchCriteria): Promise<PropertyListing[]> {
   const prompt = `You are a real estate data extraction agent. Your task is to search for distressed investment properties and extract structured data.
 
 Search Query: "${searchQuery}"
@@ -106,7 +108,8 @@ Instructions:
 3. Include properties that match distressed/investment criteria (foreclosures, fixer-uppers, etc.)
 4. Provide realistic pricing for the ${location} market
 5. Include estimated ARV and renovation costs
-6. Calculate profit potential
+${criteria?.maxPriceToARVRatio ? `6. CRITICAL: Ensure current price is AT MOST ${criteria.maxPriceToARVRatio}% of ARV (e.g., if ARV is $400k and max ratio is 60%, current price MUST be ≤ $240k)` : '6. Calculate realistic ARV based on market conditions'}
+7. Calculate profit potential: ARV - (current price + renovation costs)
 
 Return ONLY valid JSON array of properties. Each property must include:
 - address (realistic street address)
@@ -240,12 +243,25 @@ export async function runAgenticSearch(criteria: SearchCriteria): Promise<{
     console.log(`[Agentic Search] Query ${i + 1}/${queries.length}: ${query}`);
 
     try {
-      const properties = await extractPropertyInfo(query, criteria.location);
+      const properties = await extractPropertyInfo(query, criteria.location, criteria);
       
       // Filter properties based on criteria
       const filteredProperties = properties.filter((prop) => {
         if (criteria.maxPrice && prop.currentPrice > criteria.maxPrice) return false;
         if (criteria.propertyType && criteria.propertyType !== "both" && prop.propertyType !== criteria.propertyType) return false;
+        
+        // Filter by price-to-ARV ratio
+        if (criteria.maxPriceToARVRatio && prop.estimatedARV) {
+          const priceToARVRatio = (prop.currentPrice / prop.estimatedARV) * 100;
+          if (priceToARVRatio > criteria.maxPriceToARVRatio) return false;
+        }
+        
+        // Filter by minimum profit
+        if (criteria.minProfit) {
+          const profit = (prop.estimatedARV || 0) - prop.currentPrice - (prop.estimatedRenovationCost || 0);
+          if (profit < criteria.minProfit) return false;
+        }
+        
         return true;
       });
 
