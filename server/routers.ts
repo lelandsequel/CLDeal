@@ -1,7 +1,10 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { z } from "zod";
+import * as db from "./db";
+import { invokeLLM } from "./_core/llm";
 
 export const appRouter = router({
   system: systemRouter,
@@ -17,12 +20,241 @@ export const appRouter = router({
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  properties: router({
+    search: publicProcedure
+      .input(
+        z.object({
+          propertyType: z.string().optional(),
+          minPrice: z.number().optional(),
+          maxPrice: z.number().optional(),
+          minProfit: z.number().optional(),
+          city: z.string().optional(),
+          state: z.string().optional(),
+          minDaysOnMarket: z.number().optional(),
+        })
+      )
+      .query(async ({ input, ctx }) => {
+        const results = await db.searchProperties(input);
+        
+        // Save search history if user is authenticated
+        if (ctx.user) {
+          await db.addSearchHistory({
+            userId: ctx.user.id,
+            searchParams: JSON.stringify(input),
+            resultsCount: results.length,
+          });
+        }
+        
+        return results;
+      }),
+
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getPropertyById(input.id);
+      }),
+
+    getRecent: publicProcedure
+      .input(z.object({ limit: z.number().optional() }))
+      .query(async ({ input }) => {
+        return await db.getRecentProperties(input.limit);
+      }),
+
+    // Admin procedure to add properties (can be called by search agents)
+    create: protectedProcedure
+      .input(
+        z.object({
+          address: z.string(),
+          city: z.string(),
+          state: z.string(),
+          zipCode: z.string().optional(),
+          propertyType: z.enum(["single-family", "multifamily"]),
+          currentPrice: z.number(),
+          estimatedARV: z.number().optional(),
+          estimatedRenovationCost: z.number().optional(),
+          estimatedProfitPotential: z.number().optional(),
+          propertyCondition: z.string().optional(),
+          daysOnMarket: z.number().optional(),
+          sellerType: z.string().optional(),
+          listingUrl: z.string().optional(),
+          mlsNumber: z.string().optional(),
+          beds: z.number().optional(),
+          baths: z.number().optional(),
+          squareFeet: z.number().optional(),
+          lotSize: z.number().optional(),
+          sellerContactInfo: z.string().optional(),
+          photoUrls: z.string().optional(),
+          dataSource: z.string().optional(),
+          profitScore: z.number().optional(),
+          latitude: z.string().optional(),
+          longitude: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return await db.createProperty(input);
+      }),
+
+    // Intelligent search using LLM to parse natural language queries
+    intelligentSearch: publicProcedure
+      .input(z.object({ query: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const response = await invokeLLM({
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are a real estate search assistant. Extract search parameters from user queries and return them as JSON. Available parameters: propertyType (single-family, multifamily, or both), minPrice, maxPrice, minProfit, city, state, minDaysOnMarket.",
+              },
+              {
+                role: "user",
+                content: `Extract search parameters from this query: "${input.query}"`,
+              },
+            ],
+            response_format: {
+              type: "json_schema",
+              json_schema: {
+                name: "search_params",
+                strict: true,
+                schema: {
+                  type: "object",
+                  properties: {
+                    propertyType: { type: "string" },
+                    minPrice: { type: "number" },
+                    maxPrice: { type: "number" },
+                    minProfit: { type: "number" },
+                    city: { type: "string" },
+                    state: { type: "string" },
+                    minDaysOnMarket: { type: "number" },
+                  },
+                  required: [],
+                  additionalProperties: false,
+                },
+              },
+            },
+          });
+
+          const messageContent = response.choices[0].message.content;
+          const contentString = typeof messageContent === "string" ? messageContent : "{}";
+          const searchParams = JSON.parse(contentString);
+          const results = await db.searchProperties(searchParams);
+
+          // Save search history if user is authenticated
+          if (ctx.user) {
+            await db.addSearchHistory({
+              userId: ctx.user.id,
+              searchParams: JSON.stringify({ query: input.query, ...searchParams }),
+              resultsCount: results.length,
+            });
+          }
+
+          return { results, parsedParams: searchParams };
+        } catch (error) {
+          console.error("Intelligent search error:", error);
+          throw new Error("Failed to process search query");
+        }
+      }),
+  }),
+
+  watchlist: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getUserWatchlist(ctx.user.id);
+    }),
+
+    add: protectedProcedure
+      .input(
+        z.object({
+          propertyId: z.number(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        return await db.addToWatchlist({
+          userId: ctx.user.id,
+          propertyId: input.propertyId,
+          notes: input.notes,
+        });
+      }),
+
+    remove: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return await db.removeFromWatchlist(input.id, ctx.user.id);
+      }),
+
+    updateNotes: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          notes: z.string(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        return await db.updateWatchlistNotes(input.id, ctx.user.id, input.notes);
+      }),
+
+    isInWatchlist: protectedProcedure
+      .input(z.object({ propertyId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        return await db.isPropertyInWatchlist(ctx.user.id, input.propertyId);
+      }),
+  }),
+
+  alerts: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getUserAlerts(ctx.user.id);
+    }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          name: z.string(),
+          propertyType: z.enum(["single-family", "multifamily", "both"]),
+          minPrice: z.number().optional(),
+          maxPrice: z.number().optional(),
+          minProfitMargin: z.number().optional(),
+          location: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        return await db.createAlert({
+          ...input,
+          userId: ctx.user.id,
+        });
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().optional(),
+          propertyType: z.enum(["single-family", "multifamily", "both"]).optional(),
+          minPrice: z.number().optional(),
+          maxPrice: z.number().optional(),
+          minProfitMargin: z.number().optional(),
+          location: z.string().optional(),
+          isActive: z.number().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...data } = input;
+        return await db.updateAlert(id, ctx.user.id, data);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return await db.deleteAlert(input.id, ctx.user.id);
+      }),
+  }),
+
+  searchHistory: router({
+    list: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }))
+      .query(async ({ input, ctx }) => {
+        return await db.getUserSearchHistory(ctx.user.id, input.limit);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
