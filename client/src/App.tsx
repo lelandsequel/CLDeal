@@ -9,6 +9,7 @@ import PropertyDetail from "./pages/PropertyDetail";
 import Watchlist from "./pages/Watchlist";
 import Alerts from "./pages/Alerts";
 import Admin from "./pages/Admin";
+import AgenticSearch from "./pages/AgenticSearch";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/watchlist" component={Watchlist} />
       <Route path="/alerts" component={Alerts} />
       <Route path="/admin" component={Admin} />
+      <Route path="/agentic-search" component={AgenticSearch} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

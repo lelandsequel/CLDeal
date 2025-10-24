@@ -5,6 +5,7 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
 import { invokeLLM } from "./_core/llm";
+import { runAgenticSearch, runMultiLocationSearch } from "./agenticSearch";
 
 export const appRouter = router({
   system: systemRouter,
@@ -253,6 +254,37 @@ export const appRouter = router({
       .input(z.object({ limit: z.number().optional() }))
       .query(async ({ input, ctx }) => {
         return await db.getUserSearchHistory(ctx.user.id, input.limit);
+      }),
+  }),
+
+  agenticSearch: router({
+    // Run agentic search for a single location
+    runSearch: protectedProcedure
+      .input(
+        z.object({
+          location: z.string(),
+          propertyType: z.enum(["single-family", "multifamily", "both"]).optional(),
+          maxPrice: z.number().optional(),
+          minProfit: z.number().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return await runAgenticSearch(input);
+      }),
+
+    // Run agentic search for multiple locations
+    runMultiSearch: protectedProcedure
+      .input(
+        z.object({
+          locations: z.array(z.string()),
+          propertyType: z.enum(["single-family", "multifamily", "both"]).optional(),
+          maxPrice: z.number().optional(),
+          minProfit: z.number().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { locations, ...criteria } = input;
+        return await runMultiLocationSearch(locations, criteria);
       }),
   }),
 });

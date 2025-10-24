@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Building2, DollarSign, Heart, Search, TrendingUp } from "lucide-react";
+import { Building2, DollarSign, Heart, Search, Sparkles, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
 
@@ -93,6 +93,12 @@ export default function Home() {
           <p className="mb-8 text-xl text-blue-100">
             Discover distressed properties with high profit potential across the nation
           </p>
+          <Link href="/agentic-search">
+            <Button size="lg" variant="secondary" className="gap-2">
+              <Sparkles className="h-5 w-5" />
+              Run AI Property Search
+            </Button>
+          </Link>
         </div>
       </section>
 
