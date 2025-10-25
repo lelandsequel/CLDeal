@@ -68,6 +68,10 @@ export default function FinancialCalculator() {
   const flipMutation = trpc.financialCalculator.calculateFlip.useMutation();
   const brrrrMutation = trpc.financialCalculator.calculateBRRRR.useMutation();
 
+  const rentalResults = rentalMutation.data;
+  const flipResults = flipMutation.data;
+  const brrrrResults = brrrrMutation.data;
+
   const calculateRental = () => {
     rentalMutation.mutate(rentalInputs);
   };
@@ -548,21 +552,193 @@ export default function FinancialCalculator() {
             </div>
           </TabsContent>
 
-          {/* BRRRR Calculator - Placeholder for now */}
+          {/* BRRRR Calculator */}
           <TabsContent value="brrrr">
-            <Card>
-              <CardHeader>
-                <CardTitle>BRRRR Strategy Calculator</CardTitle>
-                <CardDescription>
-                  Buy, Rehab, Rent, Refinance, Repeat - Coming soon!
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-slate-600">
-                  BRRRR calculator will be available in the next update.
-                </p>
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Purchase & Renovation</CardTitle>
+                  <CardDescription>Initial investment details</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Purchase Price</Label>
+                      <Input
+                        type="number"
+                        value={brrrrInputs.purchasePrice}
+                        onChange={(e) =>
+                          setBrrrrInputs({ ...brrrrInputs, purchasePrice: Number(e.target.value) })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Down Payment %</Label>
+                      <Input
+                        type="number"
+                        value={brrrrInputs.downPaymentPercent}
+                        onChange={(e) =>
+                          setBrrrrInputs({ ...brrrrInputs, downPaymentPercent: Number(e.target.value) })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Renovation Cost</Label>
+                      <Input
+                        type="number"
+                        value={brrrrInputs.renovationCost}
+                        onChange={(e) =>
+                          setBrrrrInputs({ ...brrrrInputs, renovationCost: Number(e.target.value) })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Closing Costs</Label>
+                      <Input
+                        type="number"
+                        value={brrrrInputs.closingCosts}
+                        onChange={(e) =>
+                          setBrrrrInputs({ ...brrrrInputs, closingCosts: Number(e.target.value) })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>After Repair Value</Label>
+                      <Input
+                        type="number"
+                        value={brrrrInputs.afterRepairValue}
+                        onChange={(e) =>
+                          setBrrrrInputs({ ...brrrrInputs, afterRepairValue: Number(e.target.value) })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Refinance LTV %</Label>
+                      <Input
+                        type="number"
+                        value={brrrrInputs.refinanceLTV}
+                        onChange={(e) =>
+                          setBrrrrInputs({ ...brrrrInputs, refinanceLTV: Number(e.target.value) })
+                        }
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Rental Income</CardTitle>
+                  <CardDescription>Post-renovation rental details</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Monthly Rent</Label>
+                      <Input
+                        type="number"
+                        value={brrrrInputs.monthlyRent}
+                        onChange={(e) =>
+                          setBrrrrInputs({ ...brrrrInputs, monthlyRent: Number(e.target.value) })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Vacancy Rate %</Label>
+                      <Input
+                        type="number"
+                        value={brrrrInputs.vacancyRate}
+                        onChange={(e) =>
+                          setBrrrrInputs({ ...brrrrInputs, vacancyRate: Number(e.target.value) })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Refinance Rate %</Label>
+                      <Input
+                        type="number"
+                        value={brrrrInputs.refinanceRate}
+                        onChange={(e) =>
+                          setBrrrrInputs({ ...brrrrInputs, refinanceRate: Number(e.target.value) })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Loan Term (years)</Label>
+                      <Input
+                        type="number"
+                        value={brrrrInputs.loanTermYears}
+                        onChange={(e) =>
+                          setBrrrrInputs({ ...brrrrInputs, loanTermYears: Number(e.target.value) })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <Button onClick={calculateBRRRR} className="w-full" size="lg">
+                    <TrendingUp className="mr-2 h-4 w-4" />
+                    Calculate BRRRR ROI
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {brrrrResults && (
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle>BRRRR Analysis Results</CardTitle>
+                  <CardDescription>Buy, Rehab, Rent, Refinance, Repeat strategy metrics</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-slate-600">Total Initial Investment</p>
+                      <p className="text-2xl font-bold text-blue-600">
+                        ${brrrrResults.totalInitialInvestment.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-green-50 rounded-lg">
+                      <p className="text-sm text-slate-600">Cash Left In Deal</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        ${brrrrResults.cashLeftInDeal.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-purple-50 rounded-lg">
+                      <p className="text-sm text-slate-600">Monthly Cash Flow</p>
+                      <p className="text-2xl font-bold text-purple-600">
+                        ${brrrrResults.monthlyCashFlow.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-orange-50 rounded-lg">
+                      <p className="text-sm text-slate-600">Cash-on-Cash Return</p>
+                      <p className="text-2xl font-bold text-orange-600">
+                        {brrrrResults.cashOnCashReturn.toFixed(2)}%
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 p-4 bg-slate-50 rounded-lg">
+                    <h4 className="font-semibold mb-2">BRRRR Strategy Breakdown:</h4>
+                    <ul className="space-y-1 text-sm text-slate-600">
+                      <li>• Initial Down Payment: ${brrrrResults.downPayment.toLocaleString()}</li>
+                      <li>• Renovation Cost: ${brrrrInputs.renovationCost.toLocaleString()}</li>
+                      <li>• Closing Costs: ${brrrrInputs.closingCosts.toLocaleString()}</li>
+                      <li>• Refinance Amount: ${brrrrResults.refinanceAmount.toLocaleString()}</li>
+                      <li>• Cash Out Refinance: ${brrrrResults.cashOutRefinance.toLocaleString()}</li>
+                      <li>• Annual Cash Flow: ${brrrrResults.annualCashFlow.toLocaleString()}</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>
