@@ -105,11 +105,19 @@ export default function FinancialCalculator() {
   return (
     <div className="min-h-screen bg-slate-50 py-8">
       <div className="container">
-        <div className="mb-8">
-          <h1 className="mb-2 text-3xl font-bold text-slate-900">Financial Calculator</h1>
-          <p className="text-slate-600">
-            Analyze different investment strategies to maximize your ROI
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="mb-2 text-3xl font-bold text-slate-900">Financial Calculator</h1>
+            <p className="text-slate-600">
+              Analyze different investment strategies to maximize your ROI
+            </p>
+          </div>
+          <Button asChild variant="outline">
+            <a href="/">
+              <Home className="mr-2 h-4 w-4" />
+              Home
+            </a>
+          </Button>
         </div>
 
         <Tabs defaultValue="rental" className="space-y-6">
