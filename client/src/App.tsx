@@ -10,6 +10,7 @@ import Watchlist from "./pages/Watchlist";
 import Alerts from "./pages/Alerts";
 import Admin from "./pages/Admin";
 import AgenticSearch from "./pages/AgenticSearch";
+import FinancialCalculator from "./pages/FinancialCalculator";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/alerts" component={Alerts} />
       <Route path="/admin" component={Admin} />
       <Route path="/agentic-search" component={AgenticSearch} />
+      <Route path="/calculator" component={FinancialCalculator} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

@@ -15,6 +15,20 @@
       "when": 1761311316451,
       "tag": "0001_tiny_veda",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1761363510106,
+      "tag": "0002_perpetual_masked_marvel",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1761363870035,
+      "tag": "0003_absurd_silver_centurion",
+      "breakpoints": true
     }
   ]
 }

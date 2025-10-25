@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Building2, DollarSign, Heart, Search, Sparkles, TrendingUp } from "lucide-react";
+import { Building2, Calculator, DollarSign, Heart, Search, Sparkles, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
 import { Download, FileText } from "lucide-react";
@@ -99,18 +99,23 @@ export default function Home() {
           <nav className="flex items-center gap-4">
             {isAuthenticated ? (
               <>
-                <Link href="/watchlist">
-                  <Button variant="ghost" className="gap-2">
-                    <Heart className="h-4 w-4" />
-                    Watchlist
-                  </Button>
-                </Link>
-                <Link href="/alerts">
-                  <Button variant="ghost" className="gap-2">
-                    <TrendingUp className="h-4 w-4" />
-                    Alerts
-                  </Button>
-                </Link>
+             <Link href="/watchlist">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <Heart className="h-4 w-4" />
+              Watchlist
+            </Button>
+          </Link>
+          <Link href="/alerts">
+            <Button variant="ghost" size="sm" className="gap-2">
+              Alerts
+            </Button>
+          </Link>
+          <Link href="/calculator">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <Calculator className="h-4 w-4" />
+              Calculator
+            </Button>
+          </Link>
                 {user?.role === "admin" && (
                   <Link href="/admin">
                     <Button variant="ghost" className="gap-2">

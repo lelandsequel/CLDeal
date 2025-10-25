@@ -20,10 +20,97 @@ export const users = mysqlTable("users", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+});export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+
+/**
+ * Financial scenarios for property analysis
+ * Stores different financing and investment strategy calculations
+ */
+export const financialScenarios = mysqlTable("financial_scenarios", {
+  id: int("id").autoincrement().primaryKey(),
+  propertyId: int("propertyId").notNull(),
+  userId: int("userId").notNull(),
+  scenarioName: varchar("scenarioName", { length: 100 }).notNull(),
+  strategyType: mysqlEnum("strategyType", ["rental", "flip", "brrrr"]).notNull(),
+  
+  // Purchase details
+  purchasePrice: int("purchasePrice").notNull(),
+  downPaymentPercent: int("downPaymentPercent").notNull(),
+  downPaymentAmount: int("downPaymentAmount").notNull(),
+  loanAmount: int("loanAmount").notNull(),
+  interestRate: int("interestRate").notNull(), // stored as basis points (e.g., 650 = 6.5%)
+  loanTermYears: int("loanTermYears").notNull(),
+  closingCosts: int("closingCosts").notNull(),
+  
+  // Rental strategy fields
+  monthlyRent: int("monthlyRent"),
+  vacancyRate: int("vacancyRate"), // basis points
+  propertyManagementPercent: int("propertyManagementPercent"), // basis points
+  monthlyInsurance: int("monthlyInsurance"),
+  monthlyPropertyTax: int("monthlyPropertyTax"),
+  monthlyHOA: int("monthlyHOA"),
+  monthlyMaintenance: int("monthlyMaintenance"),
+  
+  // Flip strategy fields
+  renovationCost: int("renovationCost"),
+  holdingMonths: int("holdingMonths"),
+  sellingCostsPercent: int("sellingCostsPercent"), // basis points
+  afterRepairValue: int("afterRepairValue"),
+  
+  // BRRRR strategy fields
+  refinanceARV: int("refinanceARV"),
+  refinanceLTV: int("refinanceLTV"), // basis points
+  refinanceRate: int("refinanceRate"), // basis points
+  
+  // Calculated results
+  monthlyMortgagePayment: int("monthlyMortgagePayment"),
+  monthlyCashFlow: int("monthlyCashFlow"),
+  annualCashFlow: int("annualCashFlow"),
+  cashOnCashReturn: int("cashOnCashReturn"), // basis points
+  capRate: int("capRate"), // basis points
+  totalProfit: int("totalProfit"),
+  roi: int("roi"), // basis points
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
-export type User = typeof users.$inferSelect;
-export type InsertUser = typeof users.$inferInsert;
+export type FinancialScenario = typeof financialScenarios.$inferSelect;
+export type InsertFinancialScenario = typeof financialScenarios.$inferInsert;
+
+/**
+ * Property notes - private notes and collaboration
+ */
+export const propertyNotes = mysqlTable("property_notes", {
+  id: int("id").autoincrement().primaryKey(),
+  propertyId: int("propertyId").notNull(),
+  userId: int("userId").notNull(),
+  noteText: text("noteText").notNull(),
+  noteType: mysqlEnum("noteType", ["general", "inspection", "contractor", "financing", "offer"]).default("general").notNull(),
+  isPrivate: int("isPrivate").default(1).notNull(), // 1 = private, 0 = shared with team
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PropertyNote = typeof propertyNotes.$inferSelect;
+export type InsertPropertyNote = typeof propertyNotes.$inferInsert;
+
+/**
+ * Property shares - track who has access to view properties
+ */
+export const propertyShares = mysqlTable("property_shares", {
+  id: int("id").autoincrement().primaryKey(),
+  propertyId: int("propertyId").notNull(),
+  sharedByUserId: int("sharedByUserId").notNull(),
+  sharedWithEmail: varchar("sharedWithEmail", { length: 320 }).notNull(),
+  accessLevel: mysqlEnum("accessLevel", ["view", "edit"]).default("view").notNull(),
+  message: text("message"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PropertyShare = typeof propertyShares.$inferSelect;
+export type InsertPropertyShare = typeof propertyShares.$inferInsert;
 
 /**
  * Properties table - stores all discovered real estate properties

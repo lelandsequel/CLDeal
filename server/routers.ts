@@ -7,6 +7,9 @@ import * as db from "./db";
 import { invokeLLM } from "./_core/llm";
 import { runAgenticSearch, runMultiLocationSearch } from "./agenticSearch";
 import { generateHTMLReport, generatePDFHTML } from "./exportUtils";
+import { calculateRental, calculateFlip, calculateBRRRR } from "./financialCalculator";
+import * as financialScenarioDB from "./financialScenarioDB";
+import * as propertyNotesDB from "./propertyNotesDB";
 
 export const appRouter = router({
   system: systemRouter,
@@ -291,6 +294,227 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { locations, ...criteria } = input;
         return await runMultiLocationSearch(locations, criteria);
+      }),
+  }),
+
+  financialCalculator: router({  
+    // Calculate rental strategy ROI
+    calculateRental: protectedProcedure
+      .input(
+        z.object({
+          purchasePrice: z.number(),
+          downPaymentPercent: z.number(),
+          interestRate: z.number(),
+          loanTermYears: z.number(),
+          closingCosts: z.number(),
+          monthlyRent: z.number(),
+          vacancyRate: z.number(),
+          propertyManagementPercent: z.number(),
+          monthlyInsurance: z.number(),
+          monthlyPropertyTax: z.number(),
+          monthlyHOA: z.number(),
+          monthlyMaintenance: z.number(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return calculateRental(input);
+      }),
+
+    // Calculate flip strategy ROI
+    calculateFlip: protectedProcedure
+      .input(
+        z.object({
+          purchasePrice: z.number(),
+          downPaymentPercent: z.number(),
+          interestRate: z.number(),
+          closingCosts: z.number(),
+          renovationCost: z.number(),
+          holdingMonths: z.number(),
+          afterRepairValue: z.number(),
+          sellingCostsPercent: z.number(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return calculateFlip(input);
+      }),
+
+    // Calculate BRRRR strategy ROI
+    calculateBRRRR: protectedProcedure
+      .input(
+        z.object({
+          purchasePrice: z.number(),
+          downPaymentPercent: z.number(),
+          interestRate: z.number(),
+          loanTermYears: z.number(),
+          closingCosts: z.number(),
+          renovationCost: z.number(),
+          afterRepairValue: z.number(),
+          refinanceLTV: z.number(),
+          refinanceRate: z.number(),
+          monthlyRent: z.number(),
+          vacancyRate: z.number(),
+          propertyManagementPercent: z.number(),
+          monthlyInsurance: z.number(),
+          monthlyPropertyTax: z.number(),
+          monthlyHOA: z.number(),
+          monthlyMaintenance: z.number(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return calculateBRRRR(input);
+      }),
+
+    // Save a financial scenario
+    saveScenario: protectedProcedure
+      .input(
+        z.object({
+          propertyId: z.number(),
+          scenarioName: z.string(),
+          strategyType: z.enum(["rental", "flip", "brrrr"]),
+          calculationData: z.any(), // The full calculation input and results
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const data = input.calculationData;
+        
+        // Convert percentages to basis points for storage
+        const toBasisPoints = (percent: number) => Math.round(percent * 100);
+        
+        await financialScenarioDB.createFinancialScenario({
+          propertyId: input.propertyId,
+          userId: ctx.user!.id,
+          scenarioName: input.scenarioName,
+          strategyType: input.strategyType,
+          purchasePrice: data.purchasePrice,
+          downPaymentPercent: toBasisPoints(data.downPaymentPercent),
+          downPaymentAmount: data.downPayment || Math.round(data.purchasePrice * (data.downPaymentPercent / 100)),
+          loanAmount: data.loanAmount,
+          interestRate: toBasisPoints(data.interestRate),
+          loanTermYears: data.loanTermYears,
+          closingCosts: data.closingCosts,
+          monthlyRent: data.monthlyRent || null,
+          vacancyRate: data.vacancyRate ? toBasisPoints(data.vacancyRate) : null,
+          propertyManagementPercent: data.propertyManagementPercent ? toBasisPoints(data.propertyManagementPercent) : null,
+          monthlyInsurance: data.monthlyInsurance || null,
+          monthlyPropertyTax: data.monthlyPropertyTax || null,
+          monthlyHOA: data.monthlyHOA || null,
+          monthlyMaintenance: data.monthlyMaintenance || null,
+          renovationCost: data.renovationCost || null,
+          holdingMonths: data.holdingMonths || null,
+          sellingCostsPercent: data.sellingCostsPercent ? toBasisPoints(data.sellingCostsPercent) : null,
+          afterRepairValue: data.afterRepairValue || null,
+          refinanceARV: data.afterRepairValue || null,
+          refinanceLTV: data.refinanceLTV ? toBasisPoints(data.refinanceLTV) : null,
+          refinanceRate: data.refinanceRate ? toBasisPoints(data.refinanceRate) : null,
+          monthlyMortgagePayment: data.monthlyMortgagePayment || null,
+          monthlyCashFlow: data.monthlyCashFlow || null,
+          annualCashFlow: data.annualCashFlow || null,
+          cashOnCashReturn: data.cashOnCashReturn ? toBasisPoints(data.cashOnCashReturn) : null,
+          capRate: data.capRate ? toBasisPoints(data.capRate) : null,
+          totalProfit: data.netProfit || data.totalProfit || null,
+          roi: data.roi ? toBasisPoints(data.roi) : null,
+        });
+        
+        return { success: true };
+      }),
+
+    // Get scenarios for a property
+    getScenarios: protectedProcedure
+      .input(z.object({ propertyId: z.number() }))
+      .query(async ({ input }) => {
+        return await financialScenarioDB.getScenariosByProperty(input.propertyId);
+      }),
+
+    // Delete a scenario
+    deleteScenario: protectedProcedure
+      .input(z.object({ scenarioId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await financialScenarioDB.deleteFinancialScenario(input.scenarioId, ctx.user!.id);
+        return { success: true };
+      }),
+  }),
+
+  propertyNotes: router({
+    // Create a new note
+    create: protectedProcedure
+      .input(
+        z.object({
+          propertyId: z.number(),
+          noteText: z.string(),
+          noteType: z.enum(["general", "inspection", "contractor", "financing", "offer"]).default("general"),
+          isPrivate: z.number().default(1),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await propertyNotesDB.createPropertyNote({
+          ...input,
+          userId: ctx.user!.id,
+        });
+        return { success: true };
+      }),
+
+    // Get notes for a property
+    getByProperty: protectedProcedure
+      .input(z.object({ propertyId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        return await propertyNotesDB.getNotesByProperty(input.propertyId, ctx.user!.id);
+      }),
+
+    // Update a note
+    update: protectedProcedure
+      .input(
+        z.object({
+          noteId: z.number(),
+          noteText: z.string().optional(),
+          noteType: z.enum(["general", "inspection", "contractor", "financing", "offer"]).optional(),
+          isPrivate: z.number().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const { noteId, ...updates } = input;
+        await propertyNotesDB.updatePropertyNote(noteId, ctx.user!.id, updates);
+        return { success: true };
+      }),
+
+    // Delete a note
+    delete: protectedProcedure
+      .input(z.object({ noteId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await propertyNotesDB.deletePropertyNote(input.noteId, ctx.user!.id);
+        return { success: true };
+      }),
+
+    // Share a property
+    share: protectedProcedure
+      .input(
+        z.object({
+          propertyId: z.number(),
+          sharedWithEmail: z.string().email(),
+          accessLevel: z.enum(["view", "edit"]).default("view"),
+          message: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await propertyNotesDB.shareProperty({
+          ...input,
+          sharedByUserId: ctx.user!.id,
+        });
+        return { success: true };
+      }),
+
+    // Get shares for a property
+    getShares: protectedProcedure
+      .input(z.object({ propertyId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        return await propertyNotesDB.getPropertyShares(input.propertyId, ctx.user!.id);
+      }),
+
+    // Remove a share
+    removeShare: protectedProcedure
+      .input(z.object({ shareId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await propertyNotesDB.removePropertyShare(input.shareId, ctx.user!.id);
+        return { success: true };
       }),
   }),
 
