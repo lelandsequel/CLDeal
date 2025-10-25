@@ -11,6 +11,7 @@ import { calculateRental, calculateFlip, calculateBRRRR } from "./financialCalcu
 import * as financialScenarioDB from "./financialScenarioDB";
 import * as propertyNotesDB from "./propertyNotesDB";
 import { generateCMA, estimateARV } from "./cmaService";
+import { calculateDealScore, batchCalculateScores } from "./dealScoring";
 
 export const appRouter = router({
   system: systemRouter,
@@ -432,6 +433,32 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         await financialScenarioDB.deleteFinancialScenario(input.scenarioId, ctx.user!.id);
         return { success: true };
+      }),
+  }),
+
+  dealScore: router({
+    // Calculate deal score for a single property
+    calculate: protectedProcedure
+      .input(z.object({ propertyId: z.number() }))
+      .mutation(async ({ input }) => {
+        const property = await db.getPropertyById(input.propertyId);
+        if (!property) {
+          throw new Error("Property not found");
+        }
+        const score = await calculateDealScore(property);
+        return score;
+      }),
+
+    // Calculate scores for all properties in search results
+    batchCalculate: protectedProcedure
+      .input(z.object({ propertyIds: z.array(z.number()) }))
+      .mutation(async ({ input }) => {
+        const properties = await Promise.all(
+          input.propertyIds.map((id) => db.getPropertyById(id))
+        );
+        const validProperties = properties.filter((p): p is NonNullable<typeof p> => p !== undefined);
+        const scores = await batchCalculateScores(validProperties);
+        return Object.fromEntries(scores);
       }),
   }),
 

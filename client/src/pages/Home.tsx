@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Building2, Calculator, DollarSign, Heart, Search, Sparkles, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { Building2, Calculator, DollarSign, Heart, MapIcon, Search, Sparkles, TrendingUp } from "lucide-react";
+import React, { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Download, FileText } from "lucide-react";
 
@@ -43,6 +43,22 @@ export default function Home() {
   );
 
   const { data: recentProperties } = trpc.properties.getRecent.useQuery({ limit: 20 });
+
+  const [propertyScores, setPropertyScores] = useState<Record<number, { totalScore: number; breakdown: any; reasoning: string }>>({});
+
+  const calculateScoresMutation = trpc.dealScore.batchCalculate.useMutation({
+    onSuccess: (data) => {
+      setPropertyScores(data);
+    },
+  });
+
+  // Calculate scores when properties load
+  useEffect(() => {
+    if (properties && properties.length > 0 && isAuthenticated) {
+      const propertyIds = properties.map((p) => p.id);
+      calculateScoresMutation.mutate({ propertyIds });
+    }
+  }, [properties, isAuthenticated]);
 
   const handleSearch = () => {
     refetch();
@@ -114,6 +130,12 @@ export default function Home() {
             <Button variant="ghost" size="sm" className="gap-2">
               <Calculator className="h-4 w-4" />
               Calculator
+            </Button>
+          </Link>
+          <Link href="/map">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <MapIcon className="h-4 w-4" />
+              Map
             </Button>
           </Link>
                 {user?.role === "admin" && (

@@ -97,6 +97,38 @@ export type PropertyNote = typeof propertyNotes.$inferSelect;
 export type InsertPropertyNote = typeof propertyNotes.$inferInsert;
 
 /**
+ * Property history timeline - tracks all events and changes for a property
+ */
+export const propertyHistory = mysqlTable("property_history", {
+  id: int("id").autoincrement().primaryKey(),
+  propertyId: int("property_id").notNull(),
+  userId: int("user_id"),
+  eventType: mysqlEnum("event_type", [
+    "price_change",
+    "status_change",
+    "note_added",
+    "viewed",
+    "watchlist_added",
+    "watchlist_removed",
+    "alert_triggered",
+    "cma_generated",
+    "score_calculated",
+    "offer_made",
+    "inspection_scheduled",
+    "other",
+  ]).notNull(),
+  eventTitle: varchar("event_title", { length: 255 }).notNull(),
+  eventDescription: text("event_description"),
+  oldValue: text("old_value"),
+  newValue: text("new_value"),
+  metadata: text("metadata"), // JSON string for additional data
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type PropertyHistory = typeof propertyHistory.$inferSelect;
+export type InsertPropertyHistory = typeof propertyHistory.$inferInsert;
+
+/**
  * Property shares - track who has access to view properties
  */
 export const propertyShares = mysqlTable("property_shares", {
