@@ -13,6 +13,7 @@ import AgenticSearch from "./pages/AgenticSearch";
 import Map from "./pages/Map";
 import SavedSearches from "./pages/SavedSearches";
 import Deals from "./pages/Deals";
+import Analytics from "./pages/Analytics";
 import FinancialCalculator from "./pages/FinancialCalculator";
 
 function Router() {
@@ -26,7 +27,8 @@ function Router() {
       <Route path={"/agentic-search"} component={AgenticSearch} />
       <Route path={"/map"} component={Map} />
       <Route path={"/saved-searches"} component={SavedSearches} />
-      <Route path={"/deals"} component={Deals} />     <Route path="/calculator" component={FinancialCalculator} />
+      <Route path={"/deals"} component={Deals} />
+      <Route path={"/analytics"} component={Analytics} />     <Route path="/calculator" component={FinancialCalculator} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

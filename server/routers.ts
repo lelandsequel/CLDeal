@@ -17,6 +17,8 @@ import { notifyOwner } from "./_core/notification";
 import * as offersDB from "./offersDB";
 import * as tasksDB from "./tasksDB";
 import * as contractorsDB from "./contractorsDB";
+import { parseNaturalLanguageQuery, generateRecommendations } from "./nlSearch";
+import { getMarketStats, getPriceTrends, getTopMarkets, predictAppreciation } from "./marketAnalytics";
 
 export const appRouter = router({
   system: systemRouter,
@@ -527,6 +529,39 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         await tasksDB.deleteTask(input.id, ctx.user.id);
         return { success: true };
+      }),
+  }),
+
+  analytics: router({
+    marketStats: publicProcedure
+      .input(z.object({ city: z.string().optional(), state: z.string().optional() }))
+      .query(async ({ input }) => {
+        return await getMarketStats(input.city, input.state);
+      }),
+    priceTrends: publicProcedure
+      .input(z.object({ city: z.string().optional(), state: z.string().optional() }))
+      .query(async ({ input }) => {
+        return await getPriceTrends(input.city, input.state);
+      }),
+    topMarkets: publicProcedure.query(async () => {
+        return await getTopMarkets();
+      }),
+    predictAppreciation: publicProcedure
+      .input(z.object({ propertyId: z.number() }))
+      .query(async ({ input }) => {
+        return await predictAppreciation(input.propertyId);
+      }),
+  }),
+
+  nlSearch: router({
+    parse: protectedProcedure
+      .input(z.object({ query: z.string() }))
+      .mutation(async ({ input }) => {
+        return await parseNaturalLanguageQuery(input.query);
+      }),
+    recommendations: protectedProcedure.query(async ({ ctx }) => {
+        const searches = await db.getUserSearchHistory(ctx.user.id);
+        return await generateRecommendations({}, searches);
       }),
   }),
 
