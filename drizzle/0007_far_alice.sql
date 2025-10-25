@@ -1,0 +1,21 @@
+CREATE TABLE `portfolio` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`user_id` int NOT NULL,
+	`property_id` int,
+	`address` varchar(255) NOT NULL,
+	`city` varchar(100),
+	`state` varchar(2),
+	`purchase_price` int NOT NULL,
+	`purchase_date` timestamp NOT NULL,
+	`current_value` int,
+	`renovation_cost` int,
+	`monthly_rent` int,
+	`monthly_expenses` int,
+	`status` enum('owned','under_contract','renovating','rented','sold') NOT NULL DEFAULT 'owned',
+	`notes` text,
+	`sold_price` int,
+	`sold_date` timestamp,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `portfolio_id` PRIMARY KEY(`id`)
+);

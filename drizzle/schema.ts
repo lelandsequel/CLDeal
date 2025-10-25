@@ -246,6 +246,33 @@ export type ContractorQuote = typeof contractorQuotes.$inferSelect;
 export type InsertContractorQuote = typeof contractorQuotes.$inferInsert;
 
 /**
+ * Portfolio - track owned/acquired properties
+ */
+export const portfolio = mysqlTable("portfolio", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  propertyId: int("property_id"),
+  address: varchar("address", { length: 255 }).notNull(),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 2 }),
+  purchasePrice: int("purchase_price").notNull(),
+  purchaseDate: timestamp("purchase_date").notNull(),
+  currentValue: int("current_value"),
+  renovationCost: int("renovation_cost"),
+  monthlyRent: int("monthly_rent"),
+  monthlyExpenses: int("monthly_expenses"),
+  status: mysqlEnum("status", ["owned", "under_contract", "renovating", "rented", "sold"]).default("owned").notNull(),
+  notes: text("notes"),
+  soldPrice: int("sold_price"),
+  soldDate: timestamp("sold_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Portfolio = typeof portfolio.$inferSelect;
+export type InsertPortfolio = typeof portfolio.$inferInsert;
+
+/**
  * Property shares - track who has access to view properties
  */
 export const propertyShares = mysqlTable("property_shares", {

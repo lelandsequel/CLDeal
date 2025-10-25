@@ -19,6 +19,7 @@ import * as tasksDB from "./tasksDB";
 import * as contractorsDB from "./contractorsDB";
 import { parseNaturalLanguageQuery, generateRecommendations } from "./nlSearch";
 import { getMarketStats, getPriceTrends, getTopMarkets, predictAppreciation } from "./marketAnalytics";
+import * as portfolioDB from "./portfolioDB";
 
 export const appRouter = router({
   system: systemRouter,
@@ -562,6 +563,64 @@ export const appRouter = router({
     recommendations: protectedProcedure.query(async ({ ctx }) => {
         const searches = await db.getUserSearchHistory(ctx.user.id);
         return await generateRecommendations({}, searches);
+      }),
+  }),
+
+  portfolio: router({
+    create: protectedProcedure
+      .input(z.object({
+        propertyId: z.number().optional(),
+        address: z.string(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+        purchasePrice: z.number(),
+        purchaseDate: z.string(),
+        currentValue: z.number().optional(),
+        renovationCost: z.number().optional(),
+        monthlyRent: z.number().optional(),
+        monthlyExpenses: z.number().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await portfolioDB.createPortfolioItem({
+          ...input,
+          userId: ctx.user.id,
+          propertyId: input.propertyId || null,
+          city: input.city || null,
+          state: input.state || null,
+          purchaseDate: new Date(input.purchaseDate),
+          currentValue: input.currentValue || null,
+          renovationCost: input.renovationCost || null,
+          monthlyRent: input.monthlyRent || null,
+          monthlyExpenses: input.monthlyExpenses || null,
+          notes: input.notes || null,
+        });
+        return { success: true };
+      }),
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await portfolioDB.getUserPortfolio(ctx.user.id);
+    }),
+    stats: protectedProcedure.query(async ({ ctx }) => {
+      return await portfolioDB.getPortfolioStats(ctx.user.id);
+    }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["owned", "under_contract", "renovating", "rented", "sold"]).optional(),
+        currentValue: z.number().optional(),
+        monthlyRent: z.number().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...updates } = input;
+        await portfolioDB.updatePortfolioItem(id, ctx.user.id, updates);
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await portfolioDB.deletePortfolioItem(input.id, ctx.user.id);
+        return { success: true };
       }),
   }),
 
