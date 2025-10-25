@@ -14,6 +14,9 @@ import { generateCMA, estimateARV } from "./cmaService";
 import { calculateDealScore, batchCalculateScores } from "./dealScoring";
 import * as savedSearchesDB from "./savedSearchesDB";
 import { notifyOwner } from "./_core/notification";
+import * as offersDB from "./offersDB";
+import * as tasksDB from "./tasksDB";
+import * as contractorsDB from "./contractorsDB";
 
 export const appRouter = router({
   system: systemRouter,
@@ -434,6 +437,142 @@ export const appRouter = router({
       .input(z.object({ scenarioId: z.number() }))
       .mutation(async ({ input, ctx }) => {
         await financialScenarioDB.deleteFinancialScenario(input.scenarioId, ctx.user!.id);
+        return { success: true };
+      }),
+  }),
+
+  offers: router({
+    create: protectedProcedure
+      .input(z.object({
+        propertyId: z.number(),
+        offerAmount: z.number(),
+        contingencies: z.string().optional(),
+        closingDate: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await offersDB.createOffer({
+          ...input,
+          userId: ctx.user.id,
+          closingDate: input.closingDate ? new Date(input.closingDate) : null,
+        });
+        return { success: true };
+      }),
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await offersDB.getUserOffers(ctx.user.id);
+    }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["draft", "submitted", "accepted", "rejected", "countered", "withdrawn"]).optional(),
+        offerAmount: z.number().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...updates } = input;
+        await offersDB.updateOffer(id, ctx.user.id, updates);
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await offersDB.deleteOffer(input.id, ctx.user.id);
+        return { success: true };
+      }),
+  }),
+
+  tasks: router({
+    create: protectedProcedure
+      .input(z.object({
+        propertyId: z.number().optional(),
+        title: z.string(),
+        description: z.string().optional(),
+        taskType: z.enum(["inspection", "appraisal", "contractor_quote", "financing", "title_search", "insurance", "walkthrough", "closing", "other"]),
+        priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+        dueDate: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await tasksDB.createTask({
+          ...input,
+          userId: ctx.user.id,
+          propertyId: input.propertyId || null,
+          description: input.description || null,
+          dueDate: input.dueDate ? new Date(input.dueDate) : null,
+        });
+        return { success: true };
+      }),
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await tasksDB.getUserTasks(ctx.user.id);
+    }),
+    pending: protectedProcedure.query(async ({ ctx }) => {
+      return await tasksDB.getPendingTasks(ctx.user.id);
+    }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "in_progress", "completed", "cancelled"]).optional(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...updates } = input;
+        if (updates.status === "completed") {
+          (updates as any).completedAt = new Date();
+        }
+        await tasksDB.updateTask(id, ctx.user.id, updates);
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await tasksDB.deleteTask(input.id, ctx.user.id);
+        return { success: true };
+      }),
+  }),
+
+  contractors: router({
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        company: z.string().optional(),
+        specialty: z.string().optional(),
+        phone: z.string().optional(),
+        email: z.string().optional(),
+        rating: z.number().min(1).max(5).optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await contractorsDB.createContractor({
+          ...input,
+          userId: ctx.user.id,
+          company: input.company || null,
+          specialty: input.specialty || null,
+          phone: input.phone || null,
+          email: input.email || null,
+          rating: input.rating || null,
+          notes: input.notes || null,
+        });
+        return { success: true };
+      }),
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await contractorsDB.getUserContractors(ctx.user.id);
+    }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        rating: z.number().min(1).max(5).optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...updates } = input;
+        await contractorsDB.updateContractor(id, ctx.user.id, updates);
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await contractorsDB.deleteContractor(input.id, ctx.user.id);
         return { success: true };
       }),
   }),
