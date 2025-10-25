@@ -10,6 +10,7 @@ import { generateHTMLReport, generatePDFHTML } from "./exportUtils";
 import { calculateRental, calculateFlip, calculateBRRRR } from "./financialCalculator";
 import * as financialScenarioDB from "./financialScenarioDB";
 import * as propertyNotesDB from "./propertyNotesDB";
+import { generateCMA, estimateARV } from "./cmaService";
 
 export const appRouter = router({
   system: systemRouter,
@@ -431,6 +432,32 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         await financialScenarioDB.deleteFinancialScenario(input.scenarioId, ctx.user!.id);
         return { success: true };
+      }),
+  }),
+
+  cma: router({
+    // Generate CMA report for a property
+    generate: protectedProcedure
+      .input(z.object({ propertyId: z.number() }))
+      .mutation(async ({ input }) => {
+        const property = await db.getPropertyById(input.propertyId);
+        if (!property) {
+          throw new Error("Property not found");
+        }
+        const cmaReport = await generateCMA(property);
+        return { cmaReport };
+      }),
+
+    // Estimate ARV for a property
+    estimateARV: protectedProcedure
+      .input(z.object({ propertyId: z.number() }))
+      .mutation(async ({ input }) => {
+        const property = await db.getPropertyById(input.propertyId);
+        if (!property) {
+          throw new Error("Property not found");
+        }
+        const arv = await estimateARV(property);
+        return { arv };
       }),
   }),
 

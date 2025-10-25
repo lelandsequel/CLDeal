@@ -5,12 +5,16 @@ import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import {
   ArrowLeft,
+  BarChart3,
   Building2,
   DollarSign,
   ExternalLink,
   Heart,
   MapPin,
+  MessageSquare,
   Ruler,
+  Send,
+  Trash2,
   TrendingUp,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -21,6 +25,8 @@ export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
   const { user, isAuthenticated } = useAuth();
   const [isInWatchlist, setIsInWatchlist] = useState(false);
+  const [showCMA, setShowCMA] = useState(false);
+  const [cmaReport, setCmaReport] = useState<string | null>(null);
 
   const propertyId = parseInt(id || "0");
   const { data: property, isLoading } = trpc.properties.getById.useQuery({ id: propertyId });
@@ -44,6 +50,21 @@ export default function PropertyDetail() {
       setIsInWatchlist(inWatchlist);
     }
   }, [inWatchlist]);
+
+  const generateCMAMutation = trpc.cma.generate.useMutation({
+    onSuccess: (data) => {
+      setCmaReport(data.cmaReport);
+      setShowCMA(true);
+      toast.success("CMA report generated");
+    },
+    onError: () => {
+      toast.error("Failed to generate CMA");
+    },
+  });
+
+  const handleGenerateCMA = () => {
+    generateCMAMutation.mutate({ propertyId });
+  };
 
   const handleAddToWatchlist = () => {
     if (!isAuthenticated) {
@@ -194,11 +215,24 @@ export default function PropertyDetail() {
             {/* Profit Calculator */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Profit Calculator
-                </CardTitle>
-                <CardDescription>Estimated investment breakdown</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5" />
+                      Profit Calculator
+                    </CardTitle>
+                    <CardDescription>Estimated investment breakdown</CardDescription>
+                  </div>
+                  <Button
+                    onClick={handleGenerateCMA}
+                    disabled={generateCMAMutation.isPending}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    {generateCMAMutation.isPending ? "Generating..." : "Generate CMA"}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -310,7 +344,159 @@ export default function PropertyDetail() {
             )}
           </div>
         </div>
+
+        {/* CMA Report Section */}
+        {showCMA && cmaReport && (
+          <div className="container mt-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Comparative Market Analysis
+                </CardTitle>
+                <CardDescription>AI-generated market analysis and valuation</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="prose prose-sm max-w-none">
+                  <pre className="whitespace-pre-wrap font-sans text-sm text-slate-700">{cmaReport}</pre>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Property Notes Section */}
+        {isAuthenticated && <PropertyNotesSection propertyId={propertyId} />}
       </div>
+    </div>
+  );
+}
+
+// Property Notes Component
+function PropertyNotesSection({ propertyId }: { propertyId: number }) {
+  const [noteText, setNoteText] = useState("");
+  const [noteType, setNoteType] = useState<"general" | "inspection" | "contractor" | "financing" | "offer">("general");
+  
+  const { data: notes, refetch } = trpc.propertyNotes.getByProperty.useQuery({ propertyId });
+  
+  const createNoteMutation = trpc.propertyNotes.create.useMutation({
+    onSuccess: () => {
+      toast.success("Note added successfully");
+      setNoteText("");
+      refetch();
+    },
+    onError: () => {
+      toast.error("Failed to add note");
+    },
+  });
+  
+  const deleteNoteMutation = trpc.propertyNotes.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Note deleted");
+      refetch();
+    },
+    onError: () => {
+      toast.error("Failed to delete note");
+    },
+  });
+  
+  const handleAddNote = () => {
+    if (!noteText.trim()) {
+      toast.error("Please enter a note");
+      return;
+    }
+    
+    createNoteMutation.mutate({
+      propertyId,
+      noteText: noteText.trim(),
+      noteType,
+      isPrivate: 1,
+    });
+  };
+  
+  const handleDeleteNote = (noteId: number) => {
+    if (confirm("Are you sure you want to delete this note?")) {
+      deleteNoteMutation.mutate({ noteId });
+    }
+  };
+  
+  const noteTypeColors = {
+    general: "bg-slate-100 text-slate-700",
+    inspection: "bg-blue-100 text-blue-700",
+    contractor: "bg-orange-100 text-orange-700",
+    financing: "bg-green-100 text-green-700",
+    offer: "bg-purple-100 text-purple-700",
+  };
+  
+  return (
+    <div className="container mt-8">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Property Notes
+          </CardTitle>
+          <CardDescription>Add private notes, track inspections, and document your analysis</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Add Note Form */}
+          <div className="mb-6 space-y-4">
+            <div className="flex gap-2">
+              <select
+                value={noteType}
+                onChange={(e) => setNoteType(e.target.value as any)}
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+              >
+                <option value="general">General</option>
+                <option value="inspection">Inspection</option>
+                <option value="contractor">Contractor</option>
+                <option value="financing">Financing</option>
+                <option value="offer">Offer</option>
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <textarea
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Add a note about this property..."
+                className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
+                rows={3}
+              />
+            </div>
+            <Button onClick={handleAddNote} disabled={createNoteMutation.isPending} size="sm">
+              <Send className="mr-2 h-4 w-4" />
+              Add Note
+            </Button>
+          </div>
+          
+          {/* Notes List */}
+          <div className="space-y-3">
+            {notes && notes.length > 0 ? (
+              notes.map((note) => (
+                <div key={note.id} className="rounded-lg border bg-slate-50 p-4">
+                  <div className="mb-2 flex items-start justify-between">
+                    <span className={`rounded px-2 py-1 text-xs font-medium ${noteTypeColors[note.noteType]}`}>
+                      {note.noteType.charAt(0).toUpperCase() + note.noteType.slice(1)}
+                    </span>
+                    <button
+                      onClick={() => handleDeleteNote(note.id)}
+                      className="text-slate-400 hover:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="text-sm text-slate-700">{note.noteText}</p>
+                  <p className="mt-2 text-xs text-slate-500">
+                    {new Date(note.createdAt).toLocaleDateString()} at {new Date(note.createdAt).toLocaleTimeString()}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-center text-sm text-slate-500">No notes yet. Add your first note above!</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
