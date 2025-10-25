@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Building2, Calculator, DollarSign, Heart, MapIcon, Search, Sparkles, TrendingUp } from "lucide-react";
+import { Bell, Building2, Calculator, DollarSign, Download, FileText, Heart, Home as HomeIcon, MapIcon, Save, Search, Sparkles, TrendingUp } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { Download, FileText } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
@@ -62,6 +63,46 @@ export default function Home() {
 
   const handleSearch = () => {
     refetch();
+  };
+
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [saveSearchName, setSaveSearchName] = useState("");
+
+  const saveSearchMutation = trpc.savedSearches.create.useMutation({
+    onSuccess: () => {
+      toast.success("Search saved! You'll be notified of new matches.");
+      setShowSaveDialog(false);
+      setSaveSearchName("");
+    },
+    onError: () => {
+      toast.error("Failed to save search");
+    },
+  });
+
+  const handleSaveSearch = () => {
+    if (!isAuthenticated) {
+      window.location.href = getLoginUrl();
+      return;
+    }
+    if (!saveSearchName.trim()) {
+      toast.error("Please enter a search name");
+      return;
+    }
+    saveSearchMutation.mutate({
+      searchName: saveSearchName,
+      propertyType: searchParams.propertyType === "all" ? undefined : searchParams.propertyType,
+      minPrice: searchParams.minPrice ? parseInt(searchParams.minPrice) : undefined,
+      maxPrice: searchParams.maxPrice ? parseInt(searchParams.maxPrice) : undefined,
+      minARV: searchParams.minARV ? parseInt(searchParams.minARV) : undefined,
+      maxARV: searchParams.maxARV ? parseInt(searchParams.maxARV) : undefined,
+      maxPriceToARVRatio: searchParams.maxPriceToARVRatio ? parseInt(searchParams.maxPriceToARVRatio) : undefined,
+      minProfit: searchParams.minProfit ? parseInt(searchParams.minProfit) : undefined,
+      city: searchParams.city || undefined,
+      state: searchParams.state || undefined,
+      minDaysOnMarket: searchParams.minDaysOnMarket ? parseInt(searchParams.minDaysOnMarket) : undefined,
+      notificationsEnabled: true,
+      notificationFrequency: "daily",
+    });
   };
 
   const exportHTMLMutation = trpc.export.html.useMutation();

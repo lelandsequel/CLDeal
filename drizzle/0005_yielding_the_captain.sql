@@ -1,0 +1,21 @@
+CREATE TABLE `saved_searches` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`user_id` int NOT NULL,
+	`search_name` varchar(255) NOT NULL,
+	`property_type` enum('single-family','multifamily'),
+	`min_price` int,
+	`max_price` int,
+	`min_arv` int,
+	`max_arv` int,
+	`max_price_to_arv_ratio` int,
+	`min_profit` int,
+	`city` varchar(100),
+	`state` varchar(2),
+	`min_days_on_market` int,
+	`notifications_enabled` int NOT NULL DEFAULT 1,
+	`notification_frequency` enum('instant','daily','weekly') NOT NULL DEFAULT 'daily',
+	`last_notification_sent` timestamp,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `saved_searches_id` PRIMARY KEY(`id`)
+);

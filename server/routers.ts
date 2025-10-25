@@ -12,6 +12,8 @@ import * as financialScenarioDB from "./financialScenarioDB";
 import * as propertyNotesDB from "./propertyNotesDB";
 import { generateCMA, estimateARV } from "./cmaService";
 import { calculateDealScore, batchCalculateScores } from "./dealScoring";
+import * as savedSearchesDB from "./savedSearchesDB";
+import { notifyOwner } from "./_core/notification";
 
 export const appRouter = router({
   system: systemRouter,
@@ -432,6 +434,71 @@ export const appRouter = router({
       .input(z.object({ scenarioId: z.number() }))
       .mutation(async ({ input, ctx }) => {
         await financialScenarioDB.deleteFinancialScenario(input.scenarioId, ctx.user!.id);
+        return { success: true };
+      }),
+  }),
+
+  savedSearches: router({
+    // Create a new saved search
+    create: protectedProcedure
+      .input(
+        z.object({
+          searchName: z.string(),
+          propertyType: z.enum(["single-family", "multifamily"]).optional(),
+          minPrice: z.number().optional(),
+          maxPrice: z.number().optional(),
+          minARV: z.number().optional(),
+          maxARV: z.number().optional(),
+          maxPriceToARVRatio: z.number().optional(),
+          minProfit: z.number().optional(),
+          city: z.string().optional(),
+          state: z.string().optional(),
+          minDaysOnMarket: z.number().optional(),
+          notificationsEnabled: z.boolean().default(true),
+          notificationFrequency: z.enum(["instant", "daily", "weekly"]).default("daily"),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await savedSearchesDB.createSavedSearch({
+          userId: ctx.user.id,
+          searchName: input.searchName,
+          propertyType: input.propertyType || null,
+          minPrice: input.minPrice || null,
+          maxPrice: input.maxPrice || null,
+          minARV: input.minARV || null,
+          maxARV: input.maxARV || null,
+          maxPriceToARVRatio: input.maxPriceToARVRatio || null,
+          minProfit: input.minProfit || null,
+          city: input.city || null,
+          state: input.state || null,
+          minDaysOnMarket: input.minDaysOnMarket || null,
+          notificationsEnabled: input.notificationsEnabled ? 1 : 0,
+          notificationFrequency: input.notificationFrequency,
+        });
+        return { success: true };
+      }),
+
+    // Get all saved searches for current user
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const searches = await savedSearchesDB.getUserSavedSearches(ctx.user.id);
+      return searches;
+    }),
+
+    // Delete a saved search
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await savedSearchesDB.deleteSavedSearch(input.id, ctx.user.id);
+        return { success: true };
+      }),
+
+    // Toggle notifications for a saved search
+    toggleNotifications: protectedProcedure
+      .input(z.object({ id: z.number(), enabled: z.boolean() }))
+      .mutation(async ({ ctx, input }) => {
+        await savedSearchesDB.updateSavedSearch(input.id, ctx.user.id, {
+          notificationsEnabled: input.enabled ? 1 : 0,
+        });
         return { success: true };
       }),
   }),

@@ -129,6 +129,33 @@ export type PropertyHistory = typeof propertyHistory.$inferSelect;
 export type InsertPropertyHistory = typeof propertyHistory.$inferInsert;
 
 /**
+ * Saved searches - users can save search criteria and get auto-notifications
+ */
+export const savedSearches = mysqlTable("saved_searches", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  searchName: varchar("search_name", { length: 255 }).notNull(),
+  propertyType: mysqlEnum("property_type", ["single-family", "multifamily"]),
+  minPrice: int("min_price"),
+  maxPrice: int("max_price"),
+  minARV: int("min_arv"),
+  maxARV: int("max_arv"),
+  maxPriceToARVRatio: int("max_price_to_arv_ratio"),
+  minProfit: int("min_profit"),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 2 }),
+  minDaysOnMarket: int("min_days_on_market"),
+  notificationsEnabled: int("notifications_enabled").default(1).notNull(), // 1 = true, 0 = false
+  notificationFrequency: mysqlEnum("notification_frequency", ["instant", "daily", "weekly"]).default("daily").notNull(),
+  lastNotificationSent: timestamp("last_notification_sent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SavedSearch = typeof savedSearches.$inferSelect;
+export type InsertSavedSearch = typeof savedSearches.$inferInsert;
+
+/**
  * Property shares - track who has access to view properties
  */
 export const propertyShares = mysqlTable("property_shares", {
