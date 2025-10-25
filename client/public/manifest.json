@@ -1,7 +1,7 @@
 {
-  "name": "Deal Finder - Real Estate Investment",
-  "short_name": "Deal Finder",
-  "description": "Find and analyze distressed real estate investment properties",
+  "name": "C&L Deal Intelligence - Real Estate Investment Platform",
+  "short_name": "C&L Deal Intelligence",
+  "description": "Data-driven real estate investment platform for finding and analyzing distressed properties",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

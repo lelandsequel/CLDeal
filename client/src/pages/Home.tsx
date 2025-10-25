@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
+import { APP_LOGO, APP_TITLE, APP_TAGLINE, getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { Bell, Building2, Calculator, DollarSign, Download, FileText, Heart, Home as HomeIcon, MapIcon, Save, Search, Sparkles, TrendingUp } from "lucide-react";
 import React, { useState, useEffect } from "react";
@@ -203,7 +203,7 @@ export default function Home() {
         <div className="container mx-auto text-center">
           <h2 className="mb-4 text-4xl font-bold">Find Your Next Investment Property</h2>
           <p className="mb-8 text-xl text-blue-100">
-            Discover distressed properties with high profit potential across the nation
+            {APP_TAGLINE}
           </p>
           <Link href="/agentic-search">
             <Button size="lg" variant="secondary" className="gap-2">
