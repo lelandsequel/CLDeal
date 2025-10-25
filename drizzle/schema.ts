@@ -156,6 +156,96 @@ export type SavedSearch = typeof savedSearches.$inferSelect;
 export type InsertSavedSearch = typeof savedSearches.$inferInsert;
 
 /**
+ * Offers - track offers made on properties
+ */
+export const offers = mysqlTable("offers", {
+  id: int("id").autoincrement().primaryKey(),
+  propertyId: int("property_id").notNull(),
+  userId: int("user_id").notNull(),
+  offerAmount: int("offer_amount").notNull(),
+  status: mysqlEnum("status", ["draft", "submitted", "accepted", "rejected", "countered", "withdrawn"]).default("draft").notNull(),
+  contingencies: text("contingencies"),
+  closingDate: timestamp("closing_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Offer = typeof offers.$inferSelect;
+export type InsertOffer = typeof offers.$inferInsert;
+
+/**
+ * Tasks - manage tasks related to properties and deals
+ */
+export const tasks = mysqlTable("tasks", {
+  id: int("id").autoincrement().primaryKey(),
+  propertyId: int("property_id"),
+  userId: int("user_id").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  taskType: mysqlEnum("task_type", [
+    "inspection",
+    "appraisal",
+    "contractor_quote",
+    "financing",
+    "title_search",
+    "insurance",
+    "walkthrough",
+    "closing",
+    "other",
+  ]).notNull(),
+  status: mysqlEnum("status", ["pending", "in_progress", "completed", "cancelled"]).default("pending").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
+  dueDate: timestamp("due_date"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Task = typeof tasks.$inferSelect;
+export type InsertTask = typeof tasks.$inferInsert;
+
+/**
+ * Contractors - manage contractor network and quotes
+ */
+export const contractors = mysqlTable("contractors", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  company: varchar("company", { length: 255 }),
+  specialty: varchar("specialty", { length: 100 }),
+  phone: varchar("phone", { length: 20 }),
+  email: varchar("email", { length: 320 }),
+  rating: int("rating"), // 1-5 stars
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Contractor = typeof contractors.$inferSelect;
+export type InsertContractor = typeof contractors.$inferInsert;
+
+/**
+ * Contractor quotes for specific properties
+ */
+export const contractorQuotes = mysqlTable("contractor_quotes", {
+  id: int("id").autoincrement().primaryKey(),
+  propertyId: int("property_id").notNull(),
+  contractorId: int("contractor_id").notNull(),
+  userId: int("user_id").notNull(),
+  workDescription: text("work_description").notNull(),
+  quoteAmount: int("quote_amount").notNull(),
+  status: mysqlEnum("status", ["pending", "accepted", "rejected"]).default("pending").notNull(),
+  validUntil: timestamp("valid_until"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ContractorQuote = typeof contractorQuotes.$inferSelect;
+export type InsertContractorQuote = typeof contractorQuotes.$inferInsert;
+
+/**
  * Property shares - track who has access to view properties
  */
 export const propertyShares = mysqlTable("property_shares", {
