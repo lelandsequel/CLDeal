@@ -26,7 +26,7 @@ export default function AgenticSearch() {
   const runSearchMutation = trpc.agenticSearch.runSearch.useMutation({
     onSuccess: (data) => {
       setSearchResults(data);
-      toast.success(`Found ${data.propertiesFound} properties!`);
+      toast.success(`Found ${data.count} properties!`);
       // Refresh the page after a delay to show new properties
       setTimeout(() => {
         setLocation("/");
@@ -40,8 +40,8 @@ export default function AgenticSearch() {
   const runMultiSearchMutation = trpc.agenticSearch.runMultiSearch.useMutation({
     onSuccess: (data) => {
       setSearchResults(data);
-      const totalProperties = data.reduce((sum: number, result: any) => sum + result.propertiesFound, 0);
-      toast.success(`Found ${totalProperties} properties across ${data.length} locations!`);
+      const totalProperties = data.totalCount;
+      toast.success(`Found ${totalProperties} properties across ${data.results.length} locations!`);
       setTimeout(() => {
         setLocation("/");
       }, 2000);

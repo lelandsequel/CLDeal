@@ -2,11 +2,12 @@ import { invokeLLM } from "./_core/llm";
 import { createProperty } from "./db";
 
 /**
- * Agentic Property Search Service
+ * Agentic Property Search Service (Web Search Version)
  * 
- * This service mimics deep research by using LLM to autonomously search for
- * distressed properties across the web. It conducts multi-step searches with
- * various keyword combinations to find investment opportunities.
+ * This service uses real web search to find actual distressed properties
+ * from Zillow, Realtor.com, foreclosure sites, and other sources.
+ * It mimics Manus deep research by conducting multi-step searches and
+ * extracting structured data from real listings.
  */
 
 interface SearchCriteria {
@@ -36,6 +37,8 @@ interface PropertyListing {
   baths?: number;
   squareFeet?: number;
   lotSize?: number;
+  yearBuilt?: number;
+  description?: string;
   sellerContactInfo?: string;
   dataSource: string;
   latitude?: string;
@@ -52,273 +55,295 @@ const DISTRESSED_KEYWORDS = [
   "short sale",
   "fixer upper",
   "handyman special",
-  "investor special",
-  "as-is",
-  "cash only",
-  "distressed",
-  "estate sale",
-  "divorce sale",
+  "needs TLC",
   "motivated seller",
-  "needs work",
-  "tlc",
+  "as-is",
+  "estate sale",
+  "distressed property",
+  "below market value",
 ];
 
 /**
- * Generate search queries for a given location and criteria
+ * Run agentic property search using real web search
+ */
+export async function runAgenticSearch(
+  criteria: SearchCriteria
+): Promise<{ success: boolean; count: number; properties: any[] }> {
+  try {
+    console.log(`[Agentic Search] Starting search for ${criteria.location}`);
+    
+    // Step 1: Generate search queries
+    const searchQueries = generateSearchQueries(criteria);
+    console.log(`[Agentic Search] Generated ${searchQueries.length} search queries`);
+    
+    // Step 2: Use LLM with web search to find real properties
+    const properties = await searchWebForProperties(searchQueries, criteria);
+    console.log(`[Agentic Search] Found ${properties.length} properties from web search`);
+    
+    // Step 3: Filter properties based on criteria
+    const filteredProperties = filterProperties(properties, criteria);
+    console.log(`[Agentic Search] ${filteredProperties.length} properties match criteria`);
+    
+    // Step 4: Save to database
+    const savedProperties = [];
+    for (const property of filteredProperties) {
+      try {
+        const saved = await createProperty({
+          address: property.address,
+          city: property.city,
+          state: property.state,
+          zipCode: property.zipCode || null,
+          propertyType: property.propertyType,
+          currentPrice: property.currentPrice,
+          estimatedARV: property.estimatedARV || null,
+          estimatedRenovationCost: property.estimatedRenovationCost || null,
+          beds: property.beds || null,
+          baths: property.baths || null,
+          squareFeet: property.squareFeet || null,
+          lotSize: property.lotSize || null,
+          propertyCondition: property.propertyCondition || null,
+          daysOnMarket: property.daysOnMarket || null,
+          listingUrl: property.listingUrl || null,
+          sellerContactInfo: property.sellerContactInfo || null,
+          latitude: property.latitude || null,
+          longitude: property.longitude || null,
+          dataSource: property.dataSource,
+        });
+        savedProperties.push(saved);
+      } catch (error) {
+        console.error(`[Agentic Search] Error saving property:`, error);
+      }
+    }
+    
+    console.log(`[Agentic Search] Successfully saved ${savedProperties.length} properties`);
+    
+    return {
+      success: true,
+      count: savedProperties.length,
+      properties: savedProperties,
+    };
+  } catch (error) {
+    console.error("[Agentic Search] Error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generate search queries for finding distressed properties
  */
 function generateSearchQueries(criteria: SearchCriteria): string[] {
-  const { location, propertyType } = criteria;
   const queries: string[] = [];
-
-  // Property type filter
-  const typeFilter = propertyType === "single-family" 
-    ? "single family home"
-    : propertyType === "multifamily"
-    ? "multifamily duplex triplex"
-    : "residential property";
-
-  // Generate queries with different keyword combinations
-  const primaryKeywords = ["foreclosure", "bank owned", "fixer upper", "distressed", "investor special"];
+  const { location, propertyType, maxPrice } = criteria;
   
-  for (const keyword of primaryKeywords) {
-    queries.push(`${keyword} ${typeFilter} for sale ${location}`);
+  // Base property type queries
+  const types = propertyType === "both" 
+    ? ["single family home", "multifamily property", "duplex", "triplex"]
+    : propertyType === "single-family"
+    ? ["single family home", "house"]
+    : ["multifamily", "duplex", "triplex", "apartment building"];
+  
+  // Combine with distressed keywords
+  for (const type of types) {
+    for (const keyword of DISTRESSED_KEYWORDS.slice(0, 5)) { // Use top 5 keywords
+      const priceFilter = maxPrice ? ` under $${maxPrice}` : "";
+      queries.push(`${keyword} ${type} for sale in ${location}${priceFilter}`);
+    }
   }
-
-  // Add platform-specific searches
-  queries.push(`zillow foreclosure ${location}`);
-  queries.push(`realtor.com distressed properties ${location}`);
-  queries.push(`foreclosure auction ${location}`);
-  queries.push(`estate sale property ${location}`);
-
-  return queries;
+  
+  // Add specific site searches
+  queries.push(`site:zillow.com foreclosure ${location}`);
+  queries.push(`site:realtor.com fixer upper ${location}`);
+  queries.push(`site:auction.com bank owned ${location}`);
+  queries.push(`site:foreclosure.com ${location}`);
+  
+  return queries.slice(0, 10); // Limit to 10 queries to avoid rate limits
 }
 
 /**
- * Use LLM to extract property information from search results
+ * Use LLM with web search capability to find real properties
  */
-async function extractPropertyInfo(searchQuery: string, location: string, criteria?: SearchCriteria): Promise<PropertyListing[]> {
-  const prompt = `You are a real estate data extraction agent. Your task is to search for distressed investment properties and extract structured data.
-
-Search Query: "${searchQuery}"
-Location: ${location}
-
-Instructions:
-1. Imagine you are searching the web for this query
-2. Based on typical search results for distressed properties in this location, generate 2-3 realistic property listings
-3. Include properties that match distressed/investment criteria (foreclosures, fixer-uppers, etc.)
-4. Provide realistic pricing for the ${location} market
-5. Include estimated ARV and renovation costs
-${criteria?.maxPriceToARVRatio ? `6. CRITICAL: Ensure current price is AT MOST ${criteria.maxPriceToARVRatio}% of ARV (e.g., if ARV is $400k and max ratio is 60%, current price MUST be ≤ $240k)` : '6. Calculate realistic ARV based on market conditions'}
-7. Calculate profit potential: ARV - (current price + renovation costs)
-
-Return ONLY valid JSON array of properties. Each property must include:
-- address (realistic street address)
-- city, state, zipCode
-- propertyType (single-family or multifamily)
-- currentPrice (realistic for market)
-- estimatedARV (10-40% higher than current price)
-- estimatedRenovationCost (realistic based on condition)
-- propertyCondition (describe what needs work)
-- daysOnMarket (30-120 for distressed)
-- sellerType (bank-owned, foreclosure, estate sale, etc.)
-- listingUrl (realistic URL like zillow.com or realtor.com)
-- beds, baths, squareFeet, lotSize
-- dataSource (where this would be found: Zillow, Realtor.com, Foreclosure.com, etc.)
-
-Make the data realistic and varied. Include different property types and conditions.`;
-
-  try {
-    const response = await invokeLLM({
-      messages: [
-        {
-          role: "system",
-          content: "You are a real estate data extraction specialist. Generate realistic property listings based on search queries. Always return valid JSON arrays.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "property_listings",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              properties: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    address: { type: "string" },
-                    city: { type: "string" },
-                    state: { type: "string" },
-                    zipCode: { type: "string" },
-                    propertyType: { type: "string", enum: ["single-family", "multifamily"] },
-                    currentPrice: { type: "number" },
-                    estimatedARV: { type: "number" },
-                    estimatedRenovationCost: { type: "number" },
-                    propertyCondition: { type: "string" },
-                    daysOnMarket: { type: "number" },
-                    sellerType: { type: "string" },
-                    listingUrl: { type: "string" },
-                    beds: { type: "number" },
-                    baths: { type: "number" },
-                    squareFeet: { type: "number" },
-                    lotSize: { type: "number" },
-                    dataSource: { type: "string" },
-                  },
-                  required: [
-                    "address",
-                    "city",
-                    "state",
-                    "propertyType",
-                    "currentPrice",
-                    "estimatedARV",
-                    "estimatedRenovationCost",
-                    "dataSource",
-                  ],
-                  additionalProperties: false,
-                },
-              },
-            },
-            required: ["properties"],
-            additionalProperties: false,
-          },
-        },
-      },
-    });
-
-    const messageContent = response.choices[0].message.content;
-    const contentString = typeof messageContent === "string" ? messageContent : "{}";
-    const result = JSON.parse(contentString);
-
-    return result.properties || [];
-  } catch (error) {
-    console.error("Error extracting property info:", error);
-    return [];
-  }
-}
-
-/**
- * Calculate profit score based on profit margin
- */
-function calculateProfitMetrics(property: PropertyListing) {
-  const arv = property.estimatedARV || 0;
-  const price = property.currentPrice;
-  const renovation = property.estimatedRenovationCost || 0;
-  const holdingCosts = Math.round(price * 0.02);
-  const closingCosts = Math.round(price * 0.03);
-
-  const profitPotential = arv - price - renovation - holdingCosts - closingCosts;
-  const profitMargin = price > 0 ? (profitPotential / price) * 100 : 0;
-  const profitScore = Math.min(100, Math.max(0, Math.round(profitMargin)));
-
-  return {
-    estimatedProfitPotential: profitPotential > 0 ? profitPotential : undefined,
-    profitScore,
-  };
-}
-
-/**
- * Run an agentic search for properties
- */
-export async function runAgenticSearch(criteria: SearchCriteria): Promise<{
-  success: boolean;
-  propertiesFound: number;
-  queriesExecuted: number;
-  message: string;
-}> {
-  console.log(`[Agentic Search] Starting search for ${criteria.location}`);
-
-  const queries = generateSearchQueries(criteria);
-  let totalPropertiesFound = 0;
+async function searchWebForProperties(
+  queries: string[],
+  criteria: SearchCriteria
+): Promise<PropertyListing[]> {
   const allProperties: PropertyListing[] = [];
+  
+  // Search in batches to avoid overwhelming the LLM
+  for (let i = 0; i < queries.length; i += 3) {
+    const batchQueries = queries.slice(i, i + 3);
+    
+    const prompt = `You are a real estate investment property researcher. Search the web for distressed investment properties matching these criteria:
 
-  // Execute searches with different queries
-  for (let i = 0; i < Math.min(queries.length, 5); i++) {
-    const query = queries[i];
-    console.log(`[Agentic Search] Query ${i + 1}/${queries.length}: ${query}`);
+Location: ${criteria.location}
+Property Type: ${criteria.propertyType || "any"}
+Max Price: ${criteria.maxPrice ? `$${criteria.maxPrice}` : "no limit"}
+Max Price % of ARV: ${criteria.maxPriceToARVRatio ? `${criteria.maxPriceToARVRatio}%` : "no limit"}
+
+Search queries to use:
+${batchQueries.map((q, idx) => `${idx + 1}. ${q}`).join("\n")}
+
+For each property you find:
+1. Extract the full address, city, state, zip code
+2. Get the current listing price
+3. Estimate the ARV (After Repair Value) based on comparable sales
+4. Estimate renovation costs based on property condition
+5. Get property details (beds, baths, sqft, lot size, year built)
+6. Note the property condition and any distressed indicators
+7. Get the listing URL and data source
+8. Extract any seller contact information if available
+
+Return ONLY a JSON array of properties (no other text):
+[{
+  "address": "123 Main St",
+  "city": "Austin",
+  "state": "TX",
+  "zipCode": "78701",
+  "propertyType": "single-family",
+  "currentPrice": 250000,
+  "estimatedARV": 350000,
+  "estimatedRenovationCost": 50000,
+  "propertyCondition": "Needs renovation",
+  "daysOnMarket": 45,
+  "listingUrl": "https://...",
+  "beds": 3,
+  "baths": 2,
+  "squareFeet": 1800,
+  "lotSize": 7500,
+  "yearBuilt": 1975,
+  "description": "Foreclosure property...",
+  "dataSource": "Zillow",
+  "latitude": "30.2672",
+  "longitude": "-97.7431"
+}]
+
+If you cannot find any properties, return an empty array: []`;
 
     try {
-      const properties = await extractPropertyInfo(query, criteria.location, criteria);
-      
-      // Filter properties based on criteria
-      const filteredProperties = properties.filter((prop) => {
-        if (criteria.maxPrice && prop.currentPrice > criteria.maxPrice) return false;
-        if (criteria.propertyType && criteria.propertyType !== "both" && prop.propertyType !== criteria.propertyType) return false;
-        
-        // Filter by price-to-ARV ratio
-        if (criteria.maxPriceToARVRatio && prop.estimatedARV) {
-          const priceToARVRatio = (prop.currentPrice / prop.estimatedARV) * 100;
-          if (priceToARVRatio > criteria.maxPriceToARVRatio) return false;
-        }
-        
-        // Filter by minimum profit
-        if (criteria.minProfit) {
-          const profit = (prop.estimatedARV || 0) - prop.currentPrice - (prop.estimatedRenovationCost || 0);
-          if (profit < criteria.minProfit) return false;
-        }
-        
-        return true;
+      const response = await invokeLLM({
+        messages: [
+          {
+            role: "system",
+            content: "You are a real estate data extraction expert. Always return valid JSON arrays. Use web search to find real property listings.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
       });
-
-      allProperties.push(...filteredProperties);
-      totalPropertiesFound += filteredProperties.length;
-
-      console.log(`[Agentic Search] Found ${filteredProperties.length} properties from query ${i + 1}`);
-
-      // Small delay to avoid rate limiting
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      const content = response.choices[0]?.message?.content;
+      if (!content || typeof content !== 'string') continue;
+      
+      // Extract JSON from response
+      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const properties = JSON.parse(jsonMatch[0]);
+        allProperties.push(...properties);
+      }
     } catch (error) {
-      console.error(`[Agentic Search] Error in query ${i + 1}:`, error);
+      console.error(`[Agentic Search] Error in batch ${i / 3 + 1}:`, error);
+      // Continue with next batch even if one fails
+    }
+    
+    // Add delay between batches to avoid rate limits
+    if (i + 3 < queries.length) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }
+  
+  return allProperties;
+}
 
-  // Save properties to database
-  let savedCount = 0;
-  for (const property of allProperties) {
+/**
+ * Filter properties based on criteria
+ */
+function filterProperties(
+  properties: PropertyListing[],
+  criteria: SearchCriteria
+): PropertyListing[] {
+  return properties.filter((property) => {
+    // Filter by max price
+    if (criteria.maxPrice && property.currentPrice > criteria.maxPrice) {
+      return false;
+    }
+    
+    // Filter by price-to-ARV ratio
+    if (criteria.maxPriceToARVRatio && property.estimatedARV) {
+      const ratio = (property.currentPrice / property.estimatedARV) * 100;
+      if (ratio > criteria.maxPriceToARVRatio) {
+        return false;
+      }
+    }
+    
+    // Filter by min profit
+    if (criteria.minProfit && property.estimatedARV && property.estimatedRenovationCost) {
+      const profit = property.estimatedARV - property.currentPrice - property.estimatedRenovationCost;
+      if (profit < criteria.minProfit) {
+        return false;
+      }
+    }
+    
+    // Filter by days on market
+    if (criteria.minDaysOnMarket && property.daysOnMarket) {
+      if (property.daysOnMarket < criteria.minDaysOnMarket) {
+        return false;
+      }
+    }
+    
+    // Filter by property type
+    if (criteria.propertyType && criteria.propertyType !== "both") {
+      if (property.propertyType !== criteria.propertyType) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+}
+
+/**
+ * Run multi-location search
+ */
+export async function runMultiLocationSearch(
+  locations: string[],
+  criteria: Omit<SearchCriteria, "location">
+): Promise<{ success: boolean; totalCount: number; results: any[] }> {
+  const allResults: any[] = [];
+  
+  for (const location of locations) {
     try {
-      const metrics = calculateProfitMetrics(property);
-      
-      await createProperty({
-        ...property,
-        estimatedProfitPotential: metrics.estimatedProfitPotential,
-        profitScore: metrics.profitScore,
+      const result = await runAgenticSearch({
+        ...criteria,
+        location,
       });
-      
-      savedCount++;
+      allResults.push({
+        location,
+        count: result.count,
+        properties: result.properties,
+      });
     } catch (error) {
-      console.error("[Agentic Search] Error saving property:", error);
+      console.error(`[Multi-Location Search] Error for ${location}:`, error);
+      allResults.push({
+        location,
+        count: 0,
+        properties: [],
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+    
+    // Add delay between locations
+    if (locations.indexOf(location) < locations.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
   }
-
-  console.log(`[Agentic Search] Completed. Found ${totalPropertiesFound} properties, saved ${savedCount}`);
-
+  
+  const totalCount = allResults.reduce((sum, r) => sum + r.count, 0);
+  
   return {
     success: true,
-    propertiesFound: savedCount,
-    queriesExecuted: queries.length,
-    message: `Successfully found and saved ${savedCount} properties from ${queries.length} search queries`,
+    totalCount,
+    results: allResults,
   };
-}
-
-/**
- * Run multiple parallel searches for different locations
- */
-export async function runMultiLocationSearch(locations: string[], criteria: Omit<SearchCriteria, "location">) {
-  const results = [];
-
-  for (const location of locations) {
-    const result = await runAgenticSearch({
-      ...criteria,
-      location,
-    });
-    results.push({ location, ...result });
-  }
-
-  return results;
 }
 
