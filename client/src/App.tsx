@@ -16,6 +16,7 @@ import Deals from "./pages/Deals";
 import Analytics from "./pages/Analytics";
 import Portfolio from "./pages/Portfolio";
 import FinancialCalculator from "./pages/FinancialCalculator";
+import ImportCSV from "./pages/ImportCSV";
 
 function Router() {
   return (
@@ -30,7 +31,9 @@ function Router() {
       <Route path={"/saved-searches"} component={SavedSearches} />
       <Route path={"/deals"} component={Deals} />
       <Route path={"/analytics"} component={Analytics} />
-      <Route path={"/portfolio"} component={Portfolio} />     <Route path="/calculator" component={FinancialCalculator} />
+      <Route path="/portfolio" component={Portfolio} />
+      <Route path="/calculator" component={FinancialCalculator} />
+      <Route path="/import-csv" component={ImportCSV} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

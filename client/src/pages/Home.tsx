@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { APP_LOGO, APP_TITLE, APP_TAGLINE, getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Bell, Building2, Calculator, DollarSign, Download, FileText, Heart, Home as HomeIcon, MapIcon, Save, Search, Sparkles, TrendingUp } from "lucide-react";
+import { Bell, Building2, Calculator, DollarSign, Download, FileText, FileUp, Heart, Home as HomeIcon, MapIcon, Save, Search, Sparkles, TrendingUp } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -171,6 +171,12 @@ export default function Home() {
             <Button variant="ghost" size="sm" className="gap-2">
               <Calculator className="h-4 w-4" />
               Calculator
+            </Button>
+          </Link>
+          <Link href="/import-csv">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <FileUp className="h-4 w-4" />
+              Import CSV
             </Button>
           </Link>
           <Link href="/map">

@@ -22,5 +22,6 @@
 - [x] C&L Deal Intelligence rebranding
 
 ## Pending Features
+- [x] CSV import feature for bulk property uploads
 - [ ] Upgrade agentic search to use real web search (like Manus deep research) instead of generating fictional properties
 
