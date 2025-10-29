@@ -509,36 +509,54 @@ function PropertyNotesSection({ propertyId }: { propertyId: number }) {
 // Acquisition Actions Component
 function AcquisitionActionsCard({ propertyId, property }: { propertyId: number; property: any }) {
   const [showOfferDialog, setShowOfferDialog] = useState(false);
+  const [showCMAFormatDialog, setShowCMAFormatDialog] = useState(false);
+  const [showAnalysisFormatDialog, setShowAnalysisFormatDialog] = useState(false);
   const [offerPrice, setOfferPrice] = useState(Math.round(property.currentPrice * 0.9).toString());
   const [buyerName, setBuyerName] = useState("");
   const [motivatedScore, setMotivatedScore] = useState<number | null>(null);
   const [showMotivation, setShowMotivation] = useState(false);
 
+  const downloadFile = (content: string, filename: string, format: string) => {
+    const mimeTypes: Record<string, string> = {
+      html: 'text/html',
+      pdf: 'text/html', // HTML that can be printed to PDF
+      md: 'text/markdown',
+      txt: 'text/plain'
+    };
+    const extensions: Record<string, string> = {
+      html: '.html',
+      pdf: '.html',
+      md: '.md',
+      txt: '.txt'
+    };
+    const blob = new Blob([content], { type: mimeTypes[format] });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename + extensions[format];
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const generateCMAPDFMutation = trpc.acquisition.generateCMAPDF.useMutation({
     onSuccess: (data) => {
-      const blob = new Blob([data.html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `CMA-${property.address.replace(/\s+/g, '-')}.html`;
-      a.click();
-      toast.success("CMA PDF downloaded");
+      const filename = `CMA-${property.address.replace(/\s+/g, '-')}`;
+      downloadFile(data.content, filename, data.format);
+      toast.success(`CMA Report downloaded as ${data.format.toUpperCase()}`);
+      setShowCMAFormatDialog(false);
     },
     onError: () => {
-      toast.error("Failed to generate CMA PDF");
+      toast.error("Failed to generate CMA report");
     },
   });
 
   const generateAnalysisPDFMutation = trpc.acquisition.generateAnalysisPDF.useMutation({
     onSuccess: (data) => {
-      const blob = new Blob([data.html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Analysis-${property.address.replace(/\s+/g, '-')}.html`;
-      a.click();
+      const filename = `Analysis-${property.address.replace(/\s+/g, '-')}`;
+      downloadFile(data.content, filename, data.format);
       setMotivatedScore(data.motivationScore);
-      toast.success("Property Analysis downloaded");
+      toast.success(`Property Analysis downloaded as ${data.format.toUpperCase()}`);
+      setShowAnalysisFormatDialog(false);
     },
     onError: () => {
       toast.error("Failed to generate analysis");
@@ -594,7 +612,7 @@ function AcquisitionActionsCard({ propertyId, property }: { propertyId: number; 
       </CardHeader>
       <CardContent className="space-y-3">
         <Button
-          onClick={() => generateCMAPDFMutation.mutate({ propertyId })}
+          onClick={() => setShowCMAFormatDialog(true)}
           disabled={generateCMAPDFMutation.isPending}
           variant="outline"
           size="sm"
@@ -605,7 +623,7 @@ function AcquisitionActionsCard({ propertyId, property }: { propertyId: number; 
         </Button>
 
         <Button
-          onClick={() => generateAnalysisPDFMutation.mutate({ propertyId })}
+          onClick={() => setShowAnalysisFormatDialog(true)}
           disabled={generateAnalysisPDFMutation.isPending}
           variant="outline"
           size="sm"
@@ -703,6 +721,120 @@ function AcquisitionActionsCard({ propertyId, property }: { propertyId: number; 
                     Cancel
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* CMA Format Selection Dialog */}
+        {showCMAFormatDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <CardTitle>Select Download Format</CardTitle>
+                <CardDescription>Choose the format for your CMA report</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button
+                  onClick={() => generateCMAPDFMutation.mutate({ propertyId, format: 'html' })}
+                  disabled={generateCMAPDFMutation.isPending}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <span className="font-mono text-xs mr-2">.HTML</span>
+                  HTML - View in browser or print to PDF
+                </Button>
+                <Button
+                  onClick={() => generateCMAPDFMutation.mutate({ propertyId, format: 'pdf' })}
+                  disabled={generateCMAPDFMutation.isPending}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <span className="font-mono text-xs mr-2">.PDF</span>
+                  PDF-ready HTML - Open and print to PDF
+                </Button>
+                <Button
+                  onClick={() => generateCMAPDFMutation.mutate({ propertyId, format: 'md' })}
+                  disabled={generateCMAPDFMutation.isPending}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <span className="font-mono text-xs mr-2">.MD</span>
+                  Markdown - Plain text with formatting
+                </Button>
+                <Button
+                  onClick={() => generateCMAPDFMutation.mutate({ propertyId, format: 'txt' })}
+                  disabled={generateCMAPDFMutation.isPending}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <span className="font-mono text-xs mr-2">.TXT</span>
+                  Plain Text - No formatting
+                </Button>
+                <Button
+                  onClick={() => setShowCMAFormatDialog(false)}
+                  variant="ghost"
+                  className="w-full"
+                >
+                  Cancel
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Analysis Format Selection Dialog */}
+        {showAnalysisFormatDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <CardTitle>Select Download Format</CardTitle>
+                <CardDescription>Choose the format for your property analysis report</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button
+                  onClick={() => generateAnalysisPDFMutation.mutate({ propertyId, format: 'html' })}
+                  disabled={generateAnalysisPDFMutation.isPending}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <span className="font-mono text-xs mr-2">.HTML</span>
+                  HTML - View in browser or print to PDF
+                </Button>
+                <Button
+                  onClick={() => generateAnalysisPDFMutation.mutate({ propertyId, format: 'pdf' })}
+                  disabled={generateAnalysisPDFMutation.isPending}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <span className="font-mono text-xs mr-2">.PDF</span>
+                  PDF-ready HTML - Open and print to PDF
+                </Button>
+                <Button
+                  onClick={() => generateAnalysisPDFMutation.mutate({ propertyId, format: 'md' })}
+                  disabled={generateAnalysisPDFMutation.isPending}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <span className="font-mono text-xs mr-2">.MD</span>
+                  Markdown - Plain text with formatting
+                </Button>
+                <Button
+                  onClick={() => generateAnalysisPDFMutation.mutate({ propertyId, format: 'txt' })}
+                  disabled={generateAnalysisPDFMutation.isPending}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <span className="font-mono text-xs mr-2">.TXT</span>
+                  Plain Text - No formatting
+                </Button>
+                <Button
+                  onClick={() => setShowAnalysisFormatDialog(false)}
+                  variant="ghost"
+                  className="w-full"
+                >
+                  Cancel
+                </Button>
               </CardContent>
             </Card>
           </div>

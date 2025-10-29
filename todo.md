@@ -33,4 +33,8 @@
 - [x] CMA Reports as Downloadable PDF - Beautiful, branded PDF reports
 - [x] Property Analysis Report PDF - One-page deal summary with all key metrics
 - [x] Motivated Seller Scoring - AI analyzes property data to predict seller motivation
+- [x] Multiple download format options (PDF, MD, TXT, HTML) for all acquisition reports
+
+## Future Features (For Commercial Release)
+- [ ] Custom branded authentication (remove Manus OAuth) - Required before selling/white-labeling to clients
 

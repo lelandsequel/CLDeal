@@ -913,7 +913,10 @@ export const appRouter = router({
   acquisition: router({
     // Generate CMA PDF
     generateCMAPDF: protectedProcedure
-      .input(z.object({ propertyId: z.number() }))
+      .input(z.object({ 
+        propertyId: z.number(),
+        format: z.enum(['html', 'pdf', 'md', 'txt']).default('html')
+      }))
       .mutation(async ({ input }) => {
         const property = await db.getPropertyById(input.propertyId);
         if (!property) {
@@ -932,12 +935,17 @@ export const appRouter = router({
           locationAnalysis: "See full CMA report above for detailed location analysis.",
           recommendations: "See full CMA report above for recommendations.",
         });
-        return { html };
+        const { convertReport } = await import("./formatConverter");
+        const content = convertReport(html, input.format);
+        return { content, format: input.format };
       }),
 
     // Generate Property Analysis PDF
     generateAnalysisPDF: protectedProcedure
-      .input(z.object({ propertyId: z.number() }))
+      .input(z.object({ 
+        propertyId: z.number(),
+        format: z.enum(['html', 'pdf', 'md', 'txt']).default('html')
+      }))
       .mutation(async ({ input }) => {
         const property = await db.getPropertyById(input.propertyId);
         if (!property) {
@@ -998,7 +1006,9 @@ export const appRouter = router({
             profitMargin: property.estimatedProfitPotential || 0
           }
         });
-        return { html, motivationScore: motivationData.score, motivationReasoning: motivationData.reasoning };
+        const { convertReport } = await import("./formatConverter");
+        const content = convertReport(html, input.format);
+        return { content, format: input.format, motivationScore: motivationData.score, motivationReasoning: motivationData.reasoning };
       }),
 
     // Generate AI Offer Letter
