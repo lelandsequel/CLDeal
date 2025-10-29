@@ -342,6 +342,9 @@ export default function PropertyDetail() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Acquisition Actions */}
+            <AcquisitionActionsCard propertyId={propertyId} property={property} />
           </div>
         </div>
 
@@ -498,6 +501,214 @@ function PropertyNotesSection({ propertyId }: { propertyId: number }) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+
+
+// Acquisition Actions Component
+function AcquisitionActionsCard({ propertyId, property }: { propertyId: number; property: any }) {
+  const [showOfferDialog, setShowOfferDialog] = useState(false);
+  const [offerPrice, setOfferPrice] = useState(Math.round(property.currentPrice * 0.9).toString());
+  const [buyerName, setBuyerName] = useState("");
+  const [motivatedScore, setMotivatedScore] = useState<number | null>(null);
+  const [showMotivation, setShowMotivation] = useState(false);
+
+  const generateCMAPDFMutation = trpc.acquisition.generateCMAPDF.useMutation({
+    onSuccess: (data) => {
+      const blob = new Blob([data.html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `CMA-${property.address.replace(/\s+/g, '-')}.html`;
+      a.click();
+      toast.success("CMA PDF downloaded");
+    },
+    onError: () => {
+      toast.error("Failed to generate CMA PDF");
+    },
+  });
+
+  const generateAnalysisPDFMutation = trpc.acquisition.generateAnalysisPDF.useMutation({
+    onSuccess: (data) => {
+      const blob = new Blob([data.html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Analysis-${property.address.replace(/\s+/g, '-')}.html`;
+      a.click();
+      setMotivatedScore(data.motivationScore);
+      toast.success("Property Analysis downloaded");
+    },
+    onError: () => {
+      toast.error("Failed to generate analysis");
+    },
+  });
+
+  const generateOfferLetterMutation = trpc.acquisition.generateOfferLetter.useMutation({
+    onSuccess: (data) => {
+      const blob = new Blob([data.offerLetter], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Offer-Letter-${property.address.replace(/\s+/g, '-')}.txt`;
+      a.click();
+      toast.success("Offer letter generated");
+      setShowOfferDialog(false);
+    },
+    onError: () => {
+      toast.error("Failed to generate offer letter");
+    },
+  });
+
+  const calculateMotivationMutation = trpc.acquisition.calculateMotivatedScore.useMutation({
+    onSuccess: (data) => {
+      setMotivatedScore(data.score);
+      setShowMotivation(true);
+      toast.success("Seller motivation analyzed");
+    },
+    onError: () => {
+      toast.error("Failed to analyze seller motivation");
+    },
+  });
+
+  const handleGenerateOffer = () => {
+    if (!buyerName || !offerPrice) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    generateOfferLetterMutation.mutate({
+      propertyId,
+      offerPrice: parseInt(offerPrice),
+      buyerName,
+    });
+  };
+
+  return (
+    <Card className="border-blue-200 bg-blue-50">
+      <CardHeader>
+        <CardTitle className="text-blue-900">Acquisition Tools</CardTitle>
+        <CardDescription className="text-blue-700">
+          Streamline your deal-making process
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Button
+          onClick={() => generateCMAPDFMutation.mutate({ propertyId })}
+          disabled={generateCMAPDFMutation.isPending}
+          variant="outline"
+          size="sm"
+          className="w-full justify-start gap-2"
+        >
+          <BarChart3 className="h-4 w-4" />
+          {generateCMAPDFMutation.isPending ? "Generating..." : "Download CMA Report"}
+        </Button>
+
+        <Button
+          onClick={() => generateAnalysisPDFMutation.mutate({ propertyId })}
+          disabled={generateAnalysisPDFMutation.isPending}
+          variant="outline"
+          size="sm"
+          className="w-full justify-start gap-2"
+        >
+          <TrendingUp className="h-4 w-4" />
+          {generateAnalysisPDFMutation.isPending ? "Generating..." : "Download Deal Analysis"}
+        </Button>
+
+        <Button
+          onClick={() => setShowOfferDialog(true)}
+          variant="outline"
+          size="sm"
+          className="w-full justify-start gap-2"
+        >
+          <Send className="h-4 w-4" />
+          Generate Offer Letter
+        </Button>
+
+        <Button
+          onClick={() => calculateMotivationMutation.mutate({ propertyId })}
+          disabled={calculateMotivationMutation.isPending}
+          variant="outline"
+          size="sm"
+          className="w-full justify-start gap-2"
+        >
+          <MessageSquare className="h-4 w-4" />
+          {calculateMotivationMutation.isPending ? "Analyzing..." : "Analyze Seller Motivation"}
+        </Button>
+
+        {showMotivation && motivatedScore !== null && (
+          <div className={`mt-4 rounded-lg p-4 ${
+            motivatedScore >= 70 ? 'bg-green-100 border border-green-300' :
+            motivatedScore >= 50 ? 'bg-yellow-100 border border-yellow-300' :
+            'bg-slate-100 border border-slate-300'
+          }`}>
+            <div className="text-center">
+              <p className="text-sm font-medium text-slate-700">Seller Motivation Score</p>
+              <p className={`text-4xl font-bold ${
+                motivatedScore >= 70 ? 'text-green-700' :
+                motivatedScore >= 50 ? 'text-yellow-700' :
+                'text-slate-700'
+              }`}>
+                {motivatedScore}/100
+              </p>
+              <p className="mt-2 text-xs text-slate-600">
+                {motivatedScore >= 70 ? 'Highly motivated - Strong negotiation opportunity' :
+                 motivatedScore >= 50 ? 'Moderately motivated - Room for negotiation' :
+                 'Standard motivation - Market-rate offer recommended'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {showOfferDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <CardTitle>Generate Offer Letter</CardTitle>
+                <CardDescription>AI will create a professional offer letter</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Your Name *</label>
+                  <input
+                    type="text"
+                    value={buyerName}
+                    onChange={(e) => setBuyerName(e.target.value)}
+                    className="mt-1 w-full rounded-md border px-3 py-2"
+                    placeholder="John Doe"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Offer Price *</label>
+                  <input
+                    type="number"
+                    value={offerPrice}
+                    onChange={(e) => setOfferPrice(e.target.value)}
+                    className="mt-1 w-full rounded-md border px-3 py-2"
+                    placeholder="250000"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleGenerateOffer}
+                    disabled={generateOfferLetterMutation.isPending}
+                    className="flex-1"
+                  >
+                    {generateOfferLetterMutation.isPending ? "Generating..." : "Generate Letter"}
+                  </Button>
+                  <Button
+                    onClick={() => setShowOfferDialog(false)}
+                    variant="outline"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

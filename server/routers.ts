@@ -910,6 +910,202 @@ export const appRouter = router({
       }),
   }),
 
+  acquisition: router({
+    // Generate CMA PDF
+    generateCMAPDF: protectedProcedure
+      .input(z.object({ propertyId: z.number() }))
+      .mutation(async ({ input }) => {
+        const property = await db.getPropertyById(input.propertyId);
+        if (!property) {
+          throw new Error("Property not found");
+        }
+        const cmaReport = await generateCMA(property);
+        const { generateCMAHTML } = await import("./pdfGenerator");
+        const html = generateCMAHTML({
+          propertyAddress: property.address,
+          city: property.city,
+          state: property.state,
+          currentPrice: property.currentPrice,
+          estimatedARV: property.estimatedARV || property.currentPrice,
+          comparables: [],
+          marketTrends: cmaReport,
+          locationAnalysis: "See full CMA report above for detailed location analysis.",
+          recommendations: "See full CMA report above for recommendations.",
+        });
+        return { html };
+      }),
+
+    // Generate Property Analysis PDF
+    generateAnalysisPDF: protectedProcedure
+      .input(z.object({ propertyId: z.number() }))
+      .mutation(async ({ input }) => {
+        const property = await db.getPropertyById(input.propertyId);
+        if (!property) {
+          throw new Error("Property not found");
+        }
+        
+        // Get deal score
+        const dealScore = await calculateDealScore(property);
+        
+        // Calculate motivated seller score
+        const motivatedScore = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: "You are a real estate analyst. Analyze property data to estimate seller motivation on a scale of 0-100. Consider days on market, price, condition, and market factors. Return only a JSON object with 'score' (number) and 'reasoning' (string)."
+            },
+            {
+              role: "user",
+              content: `Analyze seller motivation for: ${JSON.stringify({
+                daysOnMarket: property.daysOnMarket,
+                currentPrice: property.currentPrice,
+                estimatedARV: property.estimatedARV,
+                propertyCondition: property.propertyCondition,
+                city: property.city,
+                state: property.state
+              })}`
+            }
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "seller_motivation",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  score: { type: "number" },
+                  reasoning: { type: "string" }
+                },
+                required: ["score", "reasoning"],
+                additionalProperties: false
+              }
+            }
+          }
+        });
+
+        const motivationData = JSON.parse(motivatedScore.choices[0]?.message?.content as string);
+        
+        const { generatePropertyAnalysisHTML } = await import("./pdfGenerator");
+        const html = generatePropertyAnalysisHTML({
+          property,
+          dealScore,
+          motivatedSellerScore: motivationData.score,
+          financialMetrics: {
+            priceToARV: property.estimatedARV ? (property.currentPrice / property.estimatedARV * 100) : 0,
+            potentialROI: property.estimatedProfitPotential && property.currentPrice > 0 
+              ? (property.estimatedProfitPotential / property.currentPrice * 100) : 0,
+            profitMargin: property.estimatedProfitPotential || 0
+          }
+        });
+        return { html, motivationScore: motivationData.score, motivationReasoning: motivationData.reasoning };
+      }),
+
+    // Generate AI Offer Letter
+    generateOfferLetter: protectedProcedure
+      .input(z.object({
+        propertyId: z.number(),
+        offerPrice: z.number(),
+        earnestMoney: z.number().optional(),
+        closingDays: z.number().optional(),
+        contingencies: z.array(z.string()).optional(),
+        buyerName: z.string(),
+        buyerEmail: z.string().optional(),
+        buyerPhone: z.string().optional(),
+        additionalTerms: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const property = await db.getPropertyById(input.propertyId);
+        if (!property) {
+          throw new Error("Property not found");
+        }
+
+        const offerLetterResponse = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: "You are a professional real estate attorney. Generate a formal, professional offer letter for a real estate purchase. The letter should be well-structured, legally sound, and persuasive. Include standard clauses and make it ready to send to a seller or their agent."
+            },
+            {
+              role: "user",
+              content: `Generate a professional offer letter with these details:
+
+Property: ${property.address}, ${property.city}, ${property.state} ${property.zipCode || ''}
+List Price: $${property.currentPrice.toLocaleString()}
+Offer Price: $${input.offerPrice.toLocaleString()}
+Buyer: ${input.buyerName}
+Buyer Email: ${input.buyerEmail || 'Not provided'}
+Buyer Phone: ${input.buyerPhone || 'Not provided'}
+Earnest Money: $${(input.earnestMoney || 5000).toLocaleString()}
+Closing Timeline: ${input.closingDays || 30} days
+Contingencies: ${input.contingencies?.join(', ') || 'Standard inspection and financing contingencies'}
+Additional Terms: ${input.additionalTerms || 'None'}
+
+Make it professional, persuasive, and ready to send.`
+            }
+          ]
+        });
+
+        return { offerLetter: offerLetterResponse.choices[0]?.message?.content as string };
+      }),
+
+    // Calculate Motivated Seller Score
+    calculateMotivatedScore: protectedProcedure
+      .input(z.object({ propertyId: z.number() }))
+      .mutation(async ({ input }) => {
+        const property = await db.getPropertyById(input.propertyId);
+        if (!property) {
+          throw new Error("Property not found");
+        }
+
+        const result = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: "You are a real estate analyst specializing in seller motivation analysis. Analyze property data to estimate how motivated the seller is on a scale of 0-100. Consider: days on market (longer = more motivated), price relative to ARV, property condition, location factors. Provide detailed reasoning."
+            },
+            {
+              role: "user",
+              content: `Analyze seller motivation:
+
+Property: ${property.address}, ${property.city}, ${property.state}
+Days on Market: ${property.daysOnMarket || 'Unknown'}
+List Price: $${property.currentPrice.toLocaleString()}
+Estimated ARV: $${property.estimatedARV?.toLocaleString() || 'Unknown'}
+Condition: ${property.propertyCondition || 'Unknown'}
+Property Type: ${property.propertyType}
+
+Provide a motivation score (0-100) and detailed reasoning.`
+            }
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "seller_motivation",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  score: { type: "number", description: "Motivation score from 0-100" },
+                  reasoning: { type: "string", description: "Detailed explanation of the score" },
+                  keyFactors: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "List of key factors affecting motivation"
+                  },
+                  negotiationStrategy: { type: "string", description: "Recommended negotiation approach" }
+                },
+                required: ["score", "reasoning", "keyFactors", "negotiationStrategy"],
+                additionalProperties: false
+              }
+            }
+          }
+        });
+
+        return JSON.parse(result.choices[0]?.message?.content as string);
+      }),
+  }),
+
   export: router({
     html: protectedProcedure
       .input(

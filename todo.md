@@ -28,3 +28,9 @@
 - [x] Bulk delete functionality for sample properties
 - [ ] Upgrade agentic search to use real web search (like Manus deep research) instead of generating fictional properties
 
+## Acquisition Streamlining Features
+- [x] AI Offer Letter Generator - Generate professional purchase offers with customizable terms
+- [x] CMA Reports as Downloadable PDF - Beautiful, branded PDF reports
+- [x] Property Analysis Report PDF - One-page deal summary with all key metrics
+- [x] Motivated Seller Scoring - AI analyzes property data to predict seller motivation
+
