@@ -6,6 +6,7 @@ import { z } from "zod";
 import * as db from "./db";
 import { invokeLLM } from "./_core/llm";
 import { runAgenticSearch, runMultiLocationSearch } from "./agenticSearch";
+import { parseAndMapCSV } from "./csvMapper";
 import { generateHTMLReport, generatePDFHTML } from "./exportUtils";
 import { calculateRental, calculateFlip, calculateBRRRR } from "./financialCalculator";
 import * as financialScenarioDB from "./financialScenarioDB";
@@ -112,66 +113,24 @@ export const appRouter = router({
         return await db.createProperty(input);
       }),
 
-    // Import properties from CSV
+    // Import properties from CSV with intelligent mapping
     importCSV: protectedProcedure
       .input(z.object({ csvData: z.string() }))
       .mutation(async ({ input }) => {
-        const lines = input.csvData.split('\n').filter(line => line.trim());
-        if (lines.length < 2) {
-          throw new Error('CSV file must contain header and at least one data row');
-        }
+        const { properties, errors: parseErrors } = parseAndMapCSV(input.csvData);
+        
+        const results = { 
+          success: 0, 
+          failed: parseErrors.length, 
+          errors: [...parseErrors] 
+        };
 
-        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-        const results = { success: 0, failed: 0, errors: [] as string[] };
-
-        for (let i = 1; i < lines.length; i++) {
+        for (const property of properties) {
           try {
-            const values = lines[i].match(/(?:"([^"]*)"|([^,]+)|(?=,))/g)?.map(v => 
-              v.replace(/^"|"$/g, '').replace(/^,$/,'').trim()
-            ) || [];
-            
-            const row: Record<string, string> = {};
-            headers.forEach((header, index) => {
-              row[header] = values[index] || '';
-            });
-
-            // Validate required fields
-            if (!row.address || !row.city || !row.state || !row.propertyType || !row.currentPrice) {
-              results.errors.push(`Row ${i + 1}: Missing required fields`);
-              results.failed++;
-              continue;
-            }
-
-            // Validate property type
-            if (row.propertyType !== 'single-family' && row.propertyType !== 'multifamily') {
-              results.errors.push(`Row ${i + 1}: Invalid property type "${row.propertyType}"`);
-              results.failed++;
-              continue;
-            }
-
-            await db.createProperty({
-              address: row.address,
-              city: row.city,
-              state: row.state,
-              zipCode: row.zipCode || null,
-              propertyType: row.propertyType as "single-family" | "multifamily",
-              currentPrice: parseInt(row.currentPrice),
-              estimatedARV: row.estimatedARV ? parseInt(row.estimatedARV) : null,
-              estimatedRenovationCost: row.estimatedRenovationCost ? parseInt(row.estimatedRenovationCost) : null,
-              beds: row.beds ? parseInt(row.beds) : null,
-              baths: row.baths ? parseInt(row.baths) : null,
-              squareFeet: row.squareFeet ? parseInt(row.squareFeet) : null,
-              lotSize: row.lotSize ? parseInt(row.lotSize) : null,
-              propertyCondition: row.propertyCondition || null,
-              daysOnMarket: row.daysOnMarket ? parseInt(row.daysOnMarket) : null,
-              listingUrl: row.listingUrl || null,
-              sellerContactInfo: row.sellerContactInfo || null,
-              latitude: row.latitude || null,
-              longitude: row.longitude || null,
-            });
+            await db.createProperty(property);
             results.success++;
           } catch (error) {
-            results.errors.push(`Row ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            results.errors.push(`${property.address}: ${error instanceof Error ? error.message : 'Database error'}`);
             results.failed++;
           }
         }
