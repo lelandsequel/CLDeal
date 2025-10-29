@@ -24,5 +24,7 @@
 ## Pending Features
 - [x] CSV import feature for bulk property uploads
 - [x] Intelligent CSV mapper to auto-detect and transform any CSV format
+- [x] Property source tracking (Sample/Imported/Agentic) with visual badges and filters
+- [x] Bulk delete functionality for sample properties
 - [ ] Upgrade agentic search to use real web search (like Manus deep research) instead of generating fictional properties
 

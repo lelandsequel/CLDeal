@@ -33,6 +33,7 @@ export interface MappedProperty {
   state: string;
   zipCode: string | null;
   propertyType: "single-family" | "multifamily";
+  propertySource: "sample" | "imported" | "agentic";
   currentPrice: number;
   estimatedARV: number | null;
   estimatedRenovationCost: number | null;
@@ -222,6 +223,7 @@ export function mapCSVRow(row: Record<string, string>, headers: string[]): Mappe
     state: mapped.state,
     zipCode: mapped.zipCode || null,
     propertyType: mapped.propertyType,
+    propertySource: 'imported' as const,
     currentPrice: mapped.currentPrice,
     estimatedARV: mapped.estimatedARV || null,
     estimatedRenovationCost: mapped.estimatedRenovationCost || null,

@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE properties SET propertySource = 'sample' WHERE propertySource IS NULL",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2gwSzaetZSVyz5m.root --database cvVYCfc6MdWQdR83NdaDic --execute UPDATE properties SET propertySource = 'sample' WHERE propertySource IS NULL",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 48
+}

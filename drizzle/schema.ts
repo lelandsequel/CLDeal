@@ -317,6 +317,7 @@ export const properties = mysqlTable("properties", {
   profitScore: int("profitScore"),
   latitude: varchar("latitude", { length: 50 }),
   longitude: varchar("longitude", { length: 50 }),
+  propertySource: mysqlEnum("propertySource", ["sample", "imported", "agentic"]).default("sample").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

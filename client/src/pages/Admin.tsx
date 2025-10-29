@@ -7,10 +7,105 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
+function BulkDeleteSection() {
+  const bulkDeleteMutation = trpc.properties.bulkDeleteBySource.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Successfully deleted ${data.deleted} properties`);
+      window.location.reload(); // Refresh to show updated counts
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete properties: ${error.message}`);
+    },
+  });
+
+  const handleBulkDelete = (source: "sample" | "imported" | "agentic") => {
+    bulkDeleteMutation.mutate({ source });
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-red-800">
+        Use these buttons to remove all properties from a specific source. This is useful for cleaning up test data.
+      </p>
+      <div className="flex flex-wrap gap-3">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" size="sm" className="gap-2">
+              <Trash2 className="h-4 w-4" />
+              Delete All Sample Properties
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete all sample/test properties from the database. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => handleBulkDelete("sample")} className="bg-red-600 hover:bg-red-700">
+                Delete Sample Properties
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2 border-red-300 text-red-700 hover:bg-red-50">
+              <Trash2 className="h-4 w-4" />
+              Delete All Imported Properties
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete all imported properties?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete all CSV-imported properties from the database. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => handleBulkDelete("imported")} className="bg-red-600 hover:bg-red-700">
+                Delete Imported Properties
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2 border-red-300 text-red-700 hover:bg-red-50">
+              <Trash2 className="h-4 w-4" />
+              Delete All AI Search Properties
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete all AI search properties?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete all properties found via agentic search from the database. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => handleBulkDelete("agentic")} className="bg-red-600 hover:bg-red-700">
+                Delete AI Search Properties
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </div>
+  );
+}
 
 export default function Admin() {
   const { user, isAuthenticated } = useAuth();
@@ -164,7 +259,20 @@ export default function Admin() {
         </div>
       </header>
 
-      <div className="container mx-auto py-8">
+      <div className="container mx-auto py-8 space-y-6">
+        {/* Bulk Delete Section */}
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader>
+            <CardTitle className="text-red-900">Manage Sample Data</CardTitle>
+            <CardDescription className="text-red-700">
+              Remove sample/test properties from the database. This action cannot be undone.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <BulkDeleteSection />
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

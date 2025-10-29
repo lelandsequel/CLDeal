@@ -103,6 +103,7 @@ export async function getUserByOpenId(openId: string) {
 // Property queries
 export async function searchProperties(criteria: {
   propertyType?: "single-family" | "multifamily";
+  propertySource?: "sample" | "imported" | "agentic";
   minPrice?: number;
   maxPrice?: number;
   minARV?: number;
@@ -120,6 +121,9 @@ export async function searchProperties(criteria: {
   
   if (criteria.propertyType) {
     conditions.push(eq(properties.propertyType, criteria.propertyType as any));
+  }
+  if (criteria.propertySource) {
+    conditions.push(eq(properties.propertySource, criteria.propertySource as any));
   }
   if (criteria.minPrice) {
     conditions.push(gte(properties.currentPrice, criteria.minPrice));
@@ -299,3 +303,14 @@ export async function addSearchHistory(data: InsertSearchHistory) {
   const result = await db.insert(searchHistory).values(data);
   return result;
 }
+
+
+// Bulk delete properties by source
+export async function deletePropertiesBySource(source: "sample" | "imported" | "agentic") {
+  const db = await getDb();
+  if (!db) return { deleted: 0 };
+
+  const result = await db.delete(properties).where(eq(properties.propertySource, source));
+  return { deleted: result[0]?.affectedRows || 0 };
+}
+

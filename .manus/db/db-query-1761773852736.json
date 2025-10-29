@@ -1,0 +1,14 @@
+{
+  "query": "SELECT propertySource, COUNT(*) as count FROM properties GROUP BY propertySource",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2gwSzaetZSVyz5m.root --database cvVYCfc6MdWQdR83NdaDic --execute SELECT propertySource, COUNT(*) as count FROM properties GROUP BY propertySource",
+  "rows": [
+    {
+      "propertySource": "sample",
+      "count": "64"
+    }
+  ],
+  "messages": [],
+  "stdout": "propertySource\tcount\nsample\t64\n",
+  "stderr": "",
+  "execution_time_ms": 48
+}

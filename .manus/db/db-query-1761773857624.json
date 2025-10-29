@@ -1,0 +1,310 @@
+{
+  "query": "SELECT id, address, propertySource, createdAt FROM properties ORDER BY createdAt DESC LIMIT 50",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2gwSzaetZSVyz5m.root --database cvVYCfc6MdWQdR83NdaDic --execute SELECT id, address, propertySource, createdAt FROM properties ORDER BY createdAt DESC LIMIT 50",
+  "rows": [
+    {
+      "id": "120021",
+      "address": "18356 Maple Creek Dr",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120040",
+      "address": "11289 Country Creek Dr",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120003",
+      "address": "16471 Pisces Rd",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120025",
+      "address": "3214 Almeda St",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120032",
+      "address": "10981 Haviland St",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120002",
+      "address": "13171 Royal Creek Rd",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120022",
+      "address": "19467 Cedar Ridge Ln",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120024",
+      "address": "21689 Birch Valley Ct",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120026",
+      "address": "4325 Blodgett St",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120041",
+      "address": "12390 Magnolia Bend Ln",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120001",
+      "address": "9871 Arbor Oak",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120036",
+      "address": "7845 Windmill Lakes Blvd",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120028",
+      "address": "6547 Dowling St",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120033",
+      "address": "11092 Inglebrook Dr",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120023",
+      "address": "20578 Oak Hollow Dr",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120031",
+      "address": "9870 Griggs Rd",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120034",
+      "address": "12103 Jutland Rd",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120030",
+      "address": "8769 Francis St",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120027",
+      "address": "5436 Calumet St",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120035",
+      "address": "13214 Kirkwood Rd",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120037",
+      "address": "8956 Shadow Creek Pkwy",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120020",
+      "address": "17245 Pine Valley Rd",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120029",
+      "address": "7658 Elgin St",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120038",
+      "address": "9067 Silverlake Dr",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120004",
+      "address": "6989 Chasewood Dr",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120039",
+      "address": "10178 Brookside Terrace",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120005",
+      "address": "16241 Sunny Morning Ct",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120006",
+      "address": "107 Church St",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120007",
+      "address": "4015 Lila",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120008",
+      "address": "1010 Palestine St",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120009",
+      "address": "2308 Russell St",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120010",
+      "address": "8835 Escondido St",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120011",
+      "address": "1404 N San Jacinto St",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120012",
+      "address": "2007 Massie St",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120013",
+      "address": "4911 E Ridge Creek Dr",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120014",
+      "address": "6003 Southmont St",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120015",
+      "address": "102 Super St Lot 2",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120016",
+      "address": "13127 Shady Oaks Ln",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120017",
+      "address": "14518 Wildwood Trl",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120018",
+      "address": "15829 Timber Ridge Dr",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "120019",
+      "address": "16934 Forest Glen Ct",
+      "propertySource": "sample",
+      "createdAt": "2025-10-29 20:41:40"
+    },
+    {
+      "id": "90002",
+      "address": "1234 Elmwood Dr",
+      "propertySource": "sample",
+      "createdAt": "2025-10-24 19:09:59"
+    },
+    {
+      "id": "90003",
+      "address": "5678 Oak Lane",
+      "propertySource": "sample",
+      "createdAt": "2025-10-24 19:09:59"
+    },
+    {
+      "id": "90006",
+      "address": "1234 Elmwood Dr",
+      "propertySource": "sample",
+      "createdAt": "2025-10-24 19:09:59"
+    },
+    {
+      "id": "90001",
+      "address": "123 Main St",
+      "propertySource": "sample",
+      "createdAt": "2025-10-24 19:09:59"
+    },
+    {
+      "id": "90005",
+      "address": "789 Oak Lane",
+      "propertySource": "sample",
+      "createdAt": "2025-10-24 19:09:59"
+    },
+    {
+      "id": "90007",
+      "address": "1234 Elmwood Dr",
+      "propertySource": "sample",
+      "createdAt": "2025-10-24 19:09:59"
+    },
+    {
+      "id": "90009",
+      "address": "9101 Pine St",
+      "propertySource": "sample",
+      "createdAt": "2025-10-24 19:09:59"
+    },
+    {
+      "id": "90004",
+      "address": "1425 Elmwood Dr",
+      "propertySource": "sample",
+      "createdAt": "2025-10-24 19:09:59"
+    },
+    {
+      "id": "90008",
+      "address": "5678 Oak Lane",
+      "propertySource": "sample",
+      "createdAt": "2025-10-24 19:09:59"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\taddress\tpropertySource\tcreatedAt\n120021\t18356 Maple Creek Dr\tsample\t2025-10-29 20:41:40\n120040\t11289 Country Creek Dr\tsample\t2025-10-29 20:41:40\n120003\t16471 Pisces Rd\tsample\t2025-10-29 20:41:40\n120025\t3214 Almeda St\tsample\t2025-10-29 20:41:40\n120032\t10981 Haviland St\tsample\t2025-10-29 20:41:40\n120002\t13171 Royal Creek Rd\tsample\t2025-10-29 20:41:40\n120022\t19467 Cedar Ridge Ln\tsample\t2025-10-29 20:41:40\n120024\t21689 Birch Valley Ct\tsample\t2025-10-29 20:41:40\n120026\t4325 Blodgett St\tsample\t2025-10-29 20:41:40\n120041\t12390 Magnolia Bend Ln\tsample\t2025-10-29 20:41:40\n120001\t9871 Arbor Oak\tsample\t2025-10-29 20:41:40\n120036\t7845 Windmill Lakes Blvd\tsample\t2025-10-29 20:41:40\n120028\t6547 Dowling St\tsample\t2025-10-29 20:41:40\n120033\t11092 Inglebrook Dr\tsample\t2025-10-29 20:41:40\n120023\t20578 Oak Hollow Dr\tsample\t2025-10-29 20:41:40\n120031\t9870 Griggs Rd\tsample\t2025-10-29 20:41:40\n120034\t12103 Jutland Rd\tsample\t2025-10-29 20:41:40\n120030\t8769 Francis St\tsample\t2025-10-29 20:41:40\n120027\t5436 Calumet St\tsample\t2025-10-29 20:41:40\n120035\t13214 Kirkwood Rd\tsample\t2025-10-29 20:41:40\n120037\t8956 Shadow Creek Pkwy\tsample\t2025-10-29 20:41:40\n120020\t17245 Pine Valley Rd\tsample\t2025-10-29 20:41:40\n120029\t7658 Elgin St\tsample\t2025-10-29 20:41:40\n120038\t9067 Silverlake Dr\tsample\t2025-10-29 20:41:40\n120004\t6989 Chasewood Dr\tsample\t2025-10-29 20:41:40\n120039\t10178 Brookside Terrace\tsample\t2025-10-29 20:41:40\n120005\t16241 Sunny Morning Ct\tsample\t2025-10-29 20:41:40\n120006\t107 Church St\tsample\t2025-10-29 20:41:40\n120007\t4015 Lila\tsample\t2025-10-29 20:41:40\n120008\t1010 Palestine St\tsample\t2025-10-29 20:41:40\n120009\t2308 Russell St\tsample\t2025-10-29 20:41:40\n120010\t8835 Escondido St\tsample\t2025-10-29 20:41:40\n120011\t1404 N San Jacinto St\tsample\t2025-10-29 20:41:40\n120012\t2007 Massie St\tsample\t2025-10-29 20:41:40\n120013\t4911 E Ridge Creek Dr\tsample\t2025-10-29 20:41:40\n120014\t6003 Southmont St\tsample\t2025-10-29 20:41:40\n120015\t102 Super St Lot 2\tsample\t2025-10-29 20:41:40\n120016\t13127 Shady Oaks Ln\tsample\t2025-10-29 20:41:40\n120017\t14518 Wildwood Trl\tsample\t2025-10-29 20:41:40\n120018\t15829 Timber Ridge Dr\tsample\t2025-10-29 20:41:40\n120019\t16934 Forest Glen Ct\tsample\t2025-10-29 20:41:40\n90002\t1234 Elmwood Dr\tsample\t2025-10-24 19:09:59\n90003\t5678 Oak Lane\tsample\t2025-10-24 19:09:59\n90006\t1234 Elmwood Dr\tsample\t2025-10-24 19:09:59\n90001\t123 Main St\tsample\t2025-10-24 19:09:59\n90005\t789 Oak Lane\tsample\t2025-10-24 19:09:59\n90007\t1234 Elmwood Dr\tsample\t2025-10-24 19:09:59\n90009\t9101 Pine St\tsample\t2025-10-24 19:09:59\n90004\t1425 Elmwood Dr\tsample\t2025-10-24 19:09:59\n90008\t5678 Oak Lane\tsample\t2025-10-24 19:09:59\n",
+  "stderr": "",
+  "execution_time_ms": 47
+}

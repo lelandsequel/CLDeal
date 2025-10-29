@@ -94,6 +94,7 @@ export async function runAgenticSearch(
           state: property.state,
           zipCode: property.zipCode || null,
           propertyType: property.propertyType,
+          propertySource: "agentic" as const,
           currentPrice: property.currentPrice,
           estimatedARV: property.estimatedARV || null,
           estimatedRenovationCost: property.estimatedRenovationCost || null,

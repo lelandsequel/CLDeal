@@ -16,6 +16,7 @@ export default function Home() {
   const { user, isAuthenticated } = useAuth();
   const [searchParams, setSearchParams] = useState({
     propertyType: "all" as "all" | "single-family" | "multifamily",
+    propertySource: "all" as "all" | "sample" | "imported" | "agentic",
     minPrice: "",
     maxPrice: "",
     minARV: "",
@@ -30,6 +31,7 @@ export default function Home() {
   const { data: properties, isLoading, refetch } = trpc.properties.search.useQuery(
     {
       propertyType: searchParams.propertyType === "all" ? undefined : (searchParams.propertyType as "single-family" | "multifamily"),
+      propertySource: searchParams.propertySource === "all" ? undefined : (searchParams.propertySource as "sample" | "imported" | "agentic"),
       minPrice: searchParams.minPrice ? parseInt(searchParams.minPrice) : undefined,
       maxPrice: searchParams.maxPrice ? parseInt(searchParams.maxPrice) : undefined,
       minARV: searchParams.minARV ? parseInt(searchParams.minARV) : undefined,
@@ -274,6 +276,24 @@ export default function Home() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="propertySource">Property Source</Label>
+                <Select
+                  value={searchParams.propertySource}
+                  onValueChange={(value) => setSearchParams({ ...searchParams, propertySource: value as "all" | "sample" | "imported" | "agentic" })}
+                >
+                  <SelectTrigger id="propertySource">
+                    <SelectValue placeholder="All Sources" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sources</SelectItem>
+                    <SelectItem value="sample">Sample Data</SelectItem>
+                    <SelectItem value="imported">Imported</SelectItem>
+                    <SelectItem value="agentic">AI Search</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="minPrice">Min Price</Label>
                 <Input
                   id="minPrice"
@@ -384,7 +404,8 @@ export default function Home() {
 
       {/* Quick Filter Buttons */}
       <section className="container mx-auto mb-8">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-sm font-medium text-slate-600">Quick Filters:</span>
           <Button
             variant="outline"
             onClick={() => {
@@ -412,6 +433,47 @@ export default function Home() {
           >
             Single Family Only
           </Button>
+          <div className="h-6 w-px bg-slate-300 mx-2" />
+          <span className="text-sm font-medium text-slate-600">Source:</span>
+          <Button
+            variant={searchParams.propertySource === "sample" ? "default" : "outline"}
+            onClick={() => {
+              setSearchParams({ ...searchParams, propertySource: "sample" });
+              setTimeout(handleSearch, 100);
+            }}
+          >
+            Sample Data
+          </Button>
+          <Button
+            variant={searchParams.propertySource === "imported" ? "default" : "outline"}
+            onClick={() => {
+              setSearchParams({ ...searchParams, propertySource: "imported" });
+              setTimeout(handleSearch, 100);
+            }}
+          >
+            Imported
+          </Button>
+          <Button
+            variant={searchParams.propertySource === "agentic" ? "default" : "outline"}
+            onClick={() => {
+              setSearchParams({ ...searchParams, propertySource: "agentic" });
+              setTimeout(handleSearch, 100);
+            }}
+          >
+            AI Search
+          </Button>
+          {searchParams.propertySource !== "all" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearchParams({ ...searchParams, propertySource: "all" });
+                setTimeout(handleSearch, 100);
+              }}
+            >
+              Clear Source Filter
+            </Button>
+          )}
         </div>
       </section>
 
@@ -440,11 +502,24 @@ export default function Home() {
                   <CardHeader>
                     <CardTitle className="flex items-start justify-between">
                       <span className="text-lg">{property.address}</span>
-                      {property.daysOnMarket && property.daysOnMarket >= 60 && (
-                        <span className="rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-700">
-                          {property.daysOnMarket}d
-                        </span>
-                      )}
+                      <div className="flex gap-1">
+                        {property.propertySource && (
+                          <span className={`rounded-full px-2 py-1 text-xs font-medium ${
+                            property.propertySource === 'sample' ? 'bg-slate-100 text-slate-700' :
+                            property.propertySource === 'imported' ? 'bg-blue-100 text-blue-700' :
+                            'bg-purple-100 text-purple-700'
+                          }`}>
+                            {property.propertySource === 'sample' ? 'Sample' :
+                             property.propertySource === 'imported' ? 'Imported' :
+                             'AI Search'}
+                          </span>
+                        )}
+                        {property.daysOnMarket && property.daysOnMarket >= 60 && (
+                          <span className="rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-700">
+                            {property.daysOnMarket}d
+                          </span>
+                        )}
+                      </div>
                     </CardTitle>
                     <CardDescription>
                       {property.city}, {property.state}

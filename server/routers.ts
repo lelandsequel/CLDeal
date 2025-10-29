@@ -41,6 +41,7 @@ export const appRouter = router({
       .input(
         z.object({
           propertyType: z.enum(["single-family", "multifamily"]).optional(),
+          propertySource: z.enum(["sample", "imported", "agentic"]).optional(),
           minPrice: z.number().optional(),
           maxPrice: z.number().optional(),
           minARV: z.number().optional(),
@@ -111,6 +112,17 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         return await db.createProperty(input);
+      }),
+
+    // Bulk delete properties by source
+    bulkDeleteBySource: protectedProcedure
+      .input(z.object({ source: z.enum(["sample", "imported", "agentic"]) }))
+      .mutation(async ({ input, ctx }) => {
+        // Only admins can bulk delete
+        if (ctx.user.role !== "admin") {
+          throw new Error("Unauthorized: Admin access required");
+        }
+        return await db.deletePropertiesBySource(input.source);
       }),
 
     // Import properties from CSV with intelligent mapping

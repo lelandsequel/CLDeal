@@ -1,0 +1,1 @@
+ALTER TABLE `properties` ADD `propertySource` enum('sample','imported','agentic') DEFAULT 'sample' NOT NULL;
