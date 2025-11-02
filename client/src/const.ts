@@ -12,6 +12,13 @@ export const APP_TAGLINE = "Data-Driven Real Estate Investment Platform";
 export const getLoginUrl = () => {
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
   const appId = import.meta.env.VITE_APP_ID;
+  
+  // Return a placeholder if OAuth is not configured
+  if (!oauthPortalUrl || !appId) {
+    console.warn('[Auth] OAuth not configured - authentication bypassed in development');
+    return '#'; // Return a safe placeholder URL
+  }
+  
   const redirectUri = `${window.location.origin}/api/oauth/callback`;
   const state = btoa(redirectUri);
 

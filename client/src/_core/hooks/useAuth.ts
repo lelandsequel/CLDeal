@@ -9,6 +9,9 @@ type UseAuthOptions = {
 };
 
 export function useAuth(options?: UseAuthOptions) {
+  // Check if OAuth is configured
+  const oauthConfigured = import.meta.env.VITE_OAUTH_PORTAL_URL && import.meta.env.VITE_APP_ID;
+  
   const { redirectOnUnauthenticated = false, redirectPath = getLoginUrl() } =
     options ?? {};
   const utils = trpc.useUtils();
@@ -61,6 +64,8 @@ export function useAuth(options?: UseAuthOptions) {
   ]);
 
   useEffect(() => {
+    // Don't redirect if OAuth is not configured
+    if (!oauthConfigured) return;
     if (!redirectOnUnauthenticated) return;
     if (meQuery.isLoading || logoutMutation.isPending) return;
     if (state.user) return;
@@ -69,6 +74,7 @@ export function useAuth(options?: UseAuthOptions) {
 
     window.location.href = redirectPath
   }, [
+    oauthConfigured,
     redirectOnUnauthenticated,
     redirectPath,
     logoutMutation.isPending,
