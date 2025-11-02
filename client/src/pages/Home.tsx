@@ -156,8 +156,6 @@ export default function Home() {
             <h1 className="text-2xl font-bold text-slate-900">{APP_TITLE}</h1>
           </div>
           <nav className="flex items-center gap-4">
-            {isAuthenticated ? (
-              <>
              <Link href="/watchlist">
             <Button variant="ghost" size="sm" className="gap-2">
               <Heart className="h-4 w-4" />
@@ -166,6 +164,7 @@ export default function Home() {
           </Link>
           <Link href="/alerts">
             <Button variant="ghost" size="sm" className="gap-2">
+              <Bell className="h-4 w-4" />
               Alerts
             </Button>
           </Link>
@@ -187,7 +186,7 @@ export default function Home() {
               Map
             </Button>
           </Link>
-                {user?.role === "admin" && (
+                {isAuthenticated && user?.role === "admin" && (
                   <Link href="/admin">
                     <Button variant="ghost" className="gap-2">
                       <Building2 className="h-4 w-4" />
@@ -195,13 +194,9 @@ export default function Home() {
                     </Button>
                   </Link>
                 )}
-                <span className="text-sm text-slate-600">Hi, {user?.name}</span>
-              </>
-            ) : (
-              <Button asChild>
-                <a href={getLoginUrl()}>Sign In</a>
-              </Button>
-            )}
+                {isAuthenticated && user?.name && (
+                <span className="text-sm text-slate-600">Hi, {user.name}</span>
+                )}
           </nav>
         </div>
       </header>
