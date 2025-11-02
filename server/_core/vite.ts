@@ -25,14 +25,8 @@ export async function setupVite(app: Express, server: Server) {
     const url = req.originalUrl;
 
     try {
-      // Use __dirname equivalent for ES modules (works in Node 16+)
-      const currentDir = path.dirname(new URL(import.meta.url).pathname);
-      const clientTemplate = path.resolve(
-        currentDir,
-        "../..",
-        "client",
-        "index.html"
-      );
+      // Use process.cwd() for more reliable path resolution
+      const clientTemplate = path.join(process.cwd(), "client", "index.html");
 
       // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
@@ -51,12 +45,17 @@ export async function setupVite(app: Express, server: Server) {
 
 export function serveStatic(app: Express) {
   // Use __dirname equivalent for ES modules (works in Node 16+)
-  const currentDir = path.dirname(new URL(import.meta.url).pathname);
+  // fileURLToPath handles both Windows and Unix paths correctly
+  const currentFile = new URL(import.meta.url).pathname;
+  const currentDir = path.dirname(currentFile);
   
   const distPath =
     process.env.NODE_ENV === "development"
       ? path.resolve(currentDir, "../..", "dist", "public")
-      : path.resolve(currentDir, "public");
+      : path.join(process.cwd(), "dist", "public");
+      
+  console.log(`[Server] Serving static files from: ${distPath}`);
+  
   if (!fs.existsSync(distPath)) {
     console.error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
@@ -67,6 +66,6 @@ export function serveStatic(app: Express) {
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+    res.sendFile(path.join(distPath, "index.html"));
   });
 }
