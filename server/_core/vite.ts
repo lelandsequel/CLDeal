@@ -44,15 +44,8 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  // Use __dirname equivalent for ES modules (works in Node 16+)
-  // fileURLToPath handles both Windows and Unix paths correctly
-  const currentFile = new URL(import.meta.url).pathname;
-  const currentDir = path.dirname(currentFile);
-  
-  const distPath =
-    process.env.NODE_ENV === "development"
-      ? path.resolve(currentDir, "../..", "dist", "public")
-      : path.join(process.cwd(), "dist", "public");
+  // Use process.cwd() for reliable cross-platform path resolution
+  const distPath = path.join(process.cwd(), "dist", "public");
       
   console.log(`[Server] Serving static files from: ${distPath}`);
   
