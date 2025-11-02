@@ -25,8 +25,10 @@ export async function setupVite(app: Express, server: Server) {
     const url = req.originalUrl;
 
     try {
+      // Use __dirname equivalent for ES modules (works in Node 16+)
+      const currentDir = path.dirname(new URL(import.meta.url).pathname);
       const clientTemplate = path.resolve(
-        import.meta.dirname,
+        currentDir,
         "../..",
         "client",
         "index.html"
@@ -48,10 +50,13 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
+  // Use __dirname equivalent for ES modules (works in Node 16+)
+  const currentDir = path.dirname(new URL(import.meta.url).pathname);
+  
   const distPath =
     process.env.NODE_ENV === "development"
-      ? path.resolve(import.meta.dirname, "../..", "dist", "public")
-      : path.resolve(import.meta.dirname, "public");
+      ? path.resolve(currentDir, "../..", "dist", "public")
+      : path.resolve(currentDir, "public");
   if (!fs.existsSync(distPath)) {
     console.error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
